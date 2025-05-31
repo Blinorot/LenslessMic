@@ -38,12 +38,12 @@ def reconstruct_codec(
         # apply avg_pool on H and W
         B, D, H, W, C, T = recon_codec_video.shape
         recon_codec_video = recon_codec_video.permute(0, 1, 5, 4, 2, 3)
-        recon_codec_video = recon_codec_video.view(B * D * T, C, H, W)
+        recon_codec_video = recon_codec_video.reshape(B * D * T, C, H, W)
         recon_codec_video = F.avg_pool2d(
             recon_codec_video, kernel_size=resize_coef, stride=resize_coef
         )
         _, _, H, W = recon_codec_video.shape
-        recon_codec_video = recon_codec_video.view(B, D, T, C, H, W)
+        recon_codec_video = recon_codec_video.reshape(B, D, T, C, H, W)
         recon_codec_video = recon_codec_video.permute(0, 1, 4, 5, 3, 2)
 
     if isinstance(min_vals, float):

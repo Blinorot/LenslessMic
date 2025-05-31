@@ -83,10 +83,10 @@ class LenslessWrapper(nn.Module):
             # make the dims adjacent to proper reshape
             lensless_video = lensless_video.permute(0, 5, 1, 2, 3, 4)
             B, T, D, H, W, C = lensless_video.shape
-            lensless_video = lensless_video.view(B * T, D, H, W, C)
+            lensless_video = lensless_video.reshape(B * T, D, H, W, C)
             recon_lensed_video = self.forward(lensless_video, roi_kwargs)
             _, _, H, W, _ = recon_lensed_video.shape
-            recon_lensed_video = recon_lensed_video.view(B, T, D, H, W, C)
+            recon_lensed_video = recon_lensed_video.reshape(B, T, D, H, W, C)
             recon_lensed_video = recon_lensed_video.permute(0, 2, 3, 4, 5, 1)
             return recon_lensed_video
 

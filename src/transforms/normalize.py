@@ -127,5 +127,9 @@ class MinMaxNormalize(nn.Module):
             min_val = self.min
         if max_val is None:
             max_val = self.max
+        if isinstance(min_val, torch.Tensor):
+            min_val = min_val.to(x.device)
+        if isinstance(max_val, torch.Tensor):
+            max_val = max_val.to(x.device)
         x = x * (max_val - min_val) + min_val
         return x
