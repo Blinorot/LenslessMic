@@ -1,4 +1,4 @@
-# PyTorch Template for DL projects
+# LenslessMic: Lensless Microphone
 
 <p align="center">
   <a href="#about">About</a> •
