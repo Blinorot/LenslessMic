@@ -6,7 +6,7 @@ from src.lensless.utils import get_roi_indexes
 from src.transforms import MinMaxNormalize
 
 
-def simulate_lensless(lensed, psf, roi_kwargs):
+def simulate_lensless(lensed, psf, roi_kwargs, normalize=True, normalize_dims=(0, 4)):
     """
     Simulate lensless image, given lensed image, PSF, and ROI information.
 
@@ -14,6 +14,9 @@ def simulate_lensless(lensed, psf, roi_kwargs):
         lensed (Tensor): lensed version of image (BxDxHxWxC).
         psf (Tensor): PSF for the system.
         roi_kwargs (dict): top_left, height, and width for ROI.
+        normalize (bool): whether to rescale lensless output via peak-normalization.
+        normalize_dims (int | tuple): dims for normalization. Use 0 for Batch-only.
+            Use (0, 4) for batch and channel-wise normalization.
     Returns:
         lensless (Tensor): simulated lensless image.
         resized_lensed (Tensor): resized (according to ROI) lensed image.
@@ -28,6 +31,11 @@ def simulate_lensless(lensed, psf, roi_kwargs):
 
     lensless = convolver.convolve(resized_lensed)
 
+    if normalize:
+        # set min = 0 to only change max.
+        min_max_normalizer = MinMaxNormalize(min=0, dim=normalize_dims)
+        lensless = min_max_normalizer.normalize(lensless)
+
     return lensless, resized_lensed
 
 
@@ -39,6 +47,8 @@ def simulate_lensless_codec(
     min_vals=None,
     max_vals=None,
     return_min_max_values=False,
+    normalize=True,
+    normalize_dims=(0, 4),
 ):
     """
     Simulate lensless codec video, given lensed codec video,
@@ -54,6 +64,9 @@ def simulate_lensless_codec(
         max_vals (float | Tensor): max_vals for original lensed codec video.
             Used for normalization.
         return_min_max_values (bool): whether to return min/max vals.
+        normalize (bool): whether to rescale lensless output via peak-normalization.
+        normalize_dims (int | tuple): dims for normalization. Use 0 for Batch-only.
+            Use (0, 4) for batch and channel-wise normalization.
     Returns:
         lensless_codec_video (Tensor): simulated lensless video.
         resized_codec_video (Tensor): resized (according to ROI) lensed video.
@@ -97,7 +110,9 @@ def simulate_lensless_codec(
         frame = transform(frame)
         frame = frame.permute(0, 1, 3, 4, 2)
 
-        lensless, resized_lensed = simulate_lensless(frame, psf, roi_kwargs)
+        lensless, resized_lensed = simulate_lensless(
+            frame, psf, roi_kwargs, normalize, normalize_dims
+        )
 
         lensless_codec_video.append(lensless.unsqueeze(-1))
         resized_codec_video.append(resized_lensed.unsqueeze(-1))

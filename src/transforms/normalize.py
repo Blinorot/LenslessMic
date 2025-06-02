@@ -50,6 +50,8 @@ class MinMaxNormalize(nn.Module):
 
         self.min = min
         self.max = max
+        if isinstance(dim, int):
+            dim = (dim,)  # convert to tuple
         self.dim = dim
 
     def set_min_max(self, min, max):

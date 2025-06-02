@@ -16,6 +16,11 @@ git+https://github.com/pvigier/perlin-numpy.git@5e26837db14042e51166eb6cad4c0df2
 waveprop
 git+https://github.com/ebezzam/slm-controller.git
 
+# image
+imageio[ffmpeg]
+scikit-image
+lpips==0.1.4
+
 # codec
 descript-audio-codec
 
