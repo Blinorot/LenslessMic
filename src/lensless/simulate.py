@@ -2,7 +2,7 @@ import torch
 import torchvision.transforms.v2 as TV2
 
 from lensless.recon.rfft_convolve import RealFFTConvolve2D
-from src.lensless.utils import get_roi_indexes
+from src.lensless.utils import get_roi_indexes, group_frames
 from src.transforms import MinMaxNormalize
 
 
@@ -49,6 +49,7 @@ def simulate_lensless_codec(
     return_min_max_values=False,
     normalize=True,
     normalize_dims=(0, 4),
+    group_frames_kwargs=None,
 ):
     """
     Simulate lensless codec video, given lensed codec video,
@@ -67,18 +68,23 @@ def simulate_lensless_codec(
         normalize (bool): whether to rescale lensless output via peak-normalization.
         normalize_dims (int | tuple): dims for normalization. Use 0 for Batch-only.
             Use (0, 4) for batch and channel-wise normalization.
+        group_frames_kwargs (dict | None): configuration for group_frames function.
+            See src.lensless.utils.group_frames. Ignored if None.
     Returns:
         lensless_codec_video (Tensor): simulated lensless video.
         resized_codec_video (Tensor): resized (according to ROI) lensed video.
     """
 
-    _, _, H, W, C, T = codec_video.shape
+    B, D, H, W, C, T = codec_video.shape
 
     assert C == psf.shape[-1], "PSF and video must have the same number of channels."
 
+    new_H = resize_coef * H
+    new_W = resize_coef * W
+
     if resize_coef > 1:
         transform = TV2.Resize(
-            (resize_coef * H, resize_coef * W),
+            (new_H, new_W),
             interpolation=TV2.InterpolationMode.NEAREST,
         )
     else:
@@ -93,6 +99,9 @@ def simulate_lensless_codec(
     min_vals_list = []
     max_vals_list = []
 
+    transformed_lensed = torch.zeros((B, D, new_H, new_W, C, T))
+
+    # normalize and resize
     for frame_index in range(T):
         frame = codec_video[..., frame_index]
 
@@ -109,6 +118,18 @@ def simulate_lensless_codec(
         frame = frame.permute(0, 1, 4, 2, 3)
         frame = transform(frame)
         frame = frame.permute(0, 1, 3, 4, 2)
+
+        transformed_lensed[..., frame_index] = frame
+
+    # group if needed
+    if group_frames_kwargs is not None:
+        transformed_lensed = group_frames(transformed_lensed, **group_frames_kwargs)
+
+    T = transformed_lensed.shape[-1]
+
+    # get lensless
+    for frame_index in range(T):
+        frame = transformed_lensed[..., frame_index]
 
         lensless, resized_lensed = simulate_lensless(
             frame, psf, roi_kwargs, normalize, normalize_dims

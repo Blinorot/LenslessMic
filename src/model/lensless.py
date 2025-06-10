@@ -14,6 +14,7 @@ class LenslessWrapper(nn.Module):
         use_loader=False,
         loader_kwargs=None,
         use_batch_video_version=False,
+        freeze_weights=False,
     ):
         """
         Args:
@@ -24,6 +25,8 @@ class LenslessWrapper(nn.Module):
             loader_kwargs (dict | None): kwargs for loaded trainable model.
             use_batch_video_version (bool): whether to use batch or for-loop
                 for video reconstruction. Set to True if VRAM is big.
+            freeze_weights (bool): whether to freeze weights and avoid
+                gradient calculation.
         """
         super().__init__()
 
@@ -34,6 +37,13 @@ class LenslessWrapper(nn.Module):
             self.recon = getattr(lensless, recon_name)(**recon_kwargs)
 
         self.use_batch_video_version = use_batch_video_version
+
+        if freeze_weights:
+            self.change_requires_grad(requires_grad=False)
+
+    def change_requires_grad(self, requires_grad):
+        for param in self.parameters():
+            param.requires_grad = requires_grad
 
     def forward(self, lensless, roi_kwargs=None):
         """

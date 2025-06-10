@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 
+from src.lensless.utils import ungroup_frames
 from src.transforms import MinMaxNormalize
 
 
@@ -10,6 +11,7 @@ def reconstruct_codec(
     max_vals,
     resize_coef=1,
     roi_kwargs=None,
+    group_frames_kwargs=None,
 ):
     """
     Reconstruct lensed codec video from a lensless one.
@@ -25,11 +27,16 @@ def reconstruct_codec(
         resize_coef (int): the scaling factor for the original lensed
             codec video.
         roi_kwargs (dict | optional): top_left, height, and width for ROI.
+        group_frames_kwargs (dict | None): configuration for ungroup_frames function.
+            See src.lensless.utils.ungroup_frames. Ignored if None.
     Returns:
         recon_lensed_video (Tensor): reconstructed lensed codec video.
             If roi_kwargs are provided, the ROI part is returned.
     """
     recon_codec_video = recon_model.reconstruct_video(lensless_codec_video, roi_kwargs)
+
+    if group_frames_kwargs is not None:
+        recon_codec_video = ungroup_frames(recon_codec_video, **group_frames_kwargs)
 
     min_max_normalizer = MinMaxNormalize(min=None, max=None, dim=(0, 4))
     # use dim = 0, 4 to support multi-object and multi-channel input
