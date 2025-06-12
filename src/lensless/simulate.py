@@ -2,7 +2,7 @@ import torch
 import torchvision.transforms.v2 as TV2
 
 from lensless.recon.rfft_convolve import RealFFTConvolve2D
-from src.lensless.utils import get_roi_indexes, group_frames
+from src.lensless.utils import get_roi_indexes, group_frames, normalize_video
 from src.transforms import MinMaxNormalize
 
 
@@ -60,9 +60,9 @@ def simulate_lensless_codec(
         psf (Tensor): PSF for the system.
         roi_kwargs (dict): top_left, height, and width for ROI.
         resize_coef (int): the scaling factor for resize.
-        min_vals (float | Tensor): min_vals for original lensed codec video.
+        min_vals (None | float | Tensor): min_vals for original lensed codec video.
             Used for normalization.
-        max_vals (float | Tensor): max_vals for original lensed codec video.
+        max_vals (None | float | Tensor): max_vals for original lensed codec video.
             Used for normalization.
         return_min_max_values (bool): whether to return min/max vals.
         normalize (bool): whether to rescale lensless output via peak-normalization.
@@ -90,29 +90,32 @@ def simulate_lensless_codec(
     else:
         transform = torch.nn.Identity()
 
-    min_max_normalizer = MinMaxNormalize(min=min_vals, max=max_vals, dim=(0, 4))
-    # use dim = 0, 4 to support multi-object and multi-channel input
-
     resized_codec_video = []
     lensless_codec_video = []
 
-    min_vals_list = []
-    max_vals_list = []
+    # normalize
+    if return_min_max_values:
+        codec_video, min_vals_list, max_vals_list = normalize_video(
+            codec_video,
+            min_vals=min_vals,
+            max_vals=max_vals,
+            return_min_max_values=return_min_max_values,
+            normalize_dims=normalize_dims,
+        )
+    else:
+        codec_video = normalize_video(
+            codec_video,
+            min_vals=min_vals,
+            max_vals=max_vals,
+            return_min_max_values=return_min_max_values,
+            normalize_dims=normalize_dims,
+        )
 
+    # resize
     transformed_lensed = torch.zeros((B, D, new_H, new_W, C, T))
 
-    # normalize and resize
     for frame_index in range(T):
         frame = codec_video[..., frame_index]
-
-        if return_min_max_values:
-            frame, min_vals, max_vals = min_max_normalizer.normalize(
-                frame, return_min_max_values
-            )
-            min_vals_list.append(min_vals)
-            max_vals_list.append(max_vals)
-        else:
-            frame = min_max_normalizer.normalize(frame)
 
         # apply transform on H and W
         frame = frame.permute(0, 1, 4, 2, 3)

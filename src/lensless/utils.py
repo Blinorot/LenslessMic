@@ -1,5 +1,7 @@
 import torch
 
+from src.transforms import MinMaxNormalize
+
 
 def get_roi_indexes(top_left, height, width, n_dim=4, axis=(-3, -2)):
     """
@@ -21,6 +23,51 @@ def get_roi_indexes(top_left, height, width, n_dim=4, axis=(-3, -2)):
     index[axis[1]] = slice(top_left[1], top_left[1] + width)
 
     return tuple(index)
+
+
+def normalize_video(
+    video,
+    min_vals=None,
+    max_vals=None,
+    return_min_max_values=False,
+    normalize_dims=(0, 4),
+):
+    """
+    Normalize video frames.
+
+    Args:
+        video (Tensor): video (BxDxHxWxCxT).
+        min_vals (None | float | Tensor): min_vals for original video.
+        max_vals (None | float | Tensor): max_vals for original video.
+        return_min_max_values (bool): whether to return min/max vals.
+        normalize_dims (int | tuple): dims for normalization. Use 0 for Batch-only.
+            Use (0, 4) for batch and channel-wise normalization.
+    Returns:
+        normalized_video (Tensor): normalized video
+        min_vals_list (list[Tensor|float]): list of min_vals for each frame (Optional).
+        max_vals_list (list[Tensor|float]): list of max_vals for each frame (Optional).
+    """
+    min_max_normalizer = MinMaxNormalize(min=min_vals, max=max_vals, dim=normalize_dims)
+    min_vals_list = []
+    max_vals_list = []
+    normalized_video = torch.zeros_like(video)
+    for frame_index in range(video.shape[-1]):
+        frame = video[..., frame_index]
+
+        if return_min_max_values:
+            frame, min_vals, max_vals = min_max_normalizer.normalize(
+                frame, return_min_max_values
+            )
+            min_vals_list.append(min_vals)
+            max_vals_list.append(max_vals)
+        else:
+            frame = min_max_normalizer.normalize(frame)
+        normalized_video[..., frame_index] = frame.clone()
+
+    if return_min_max_values:
+        return normalized_video, min_vals_list, max_vals_list
+
+    return normalized_video
 
 
 def group_frames(video, n_rows, n_cols, row_space, col_space, **kwargs):

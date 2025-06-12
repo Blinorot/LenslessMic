@@ -13,8 +13,13 @@ from tqdm.auto import tqdm
 
 from src.datasets.data_utils import load_grayscale_video_ffv1, save_grayscale_video_ffv1
 from src.lensless.simulate import simulate_lensless_codec
+from src.lensless.utils import normalize_video
+from src.transforms import MinMaxNormalize
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_TRANSFORM = {"audio": MinMaxNormalize(min=0, dim=0)}
 
 
 class BaseDataset(Dataset):
@@ -34,7 +39,7 @@ class BaseDataset(Dataset):
         max_audio_length=None,
         max_text_length=None,
         shuffle_index=False,
-        instance_transforms=None,
+        instance_transforms=DEFAULT_TRANSFORM,
         lensless_tag=None,
         codec=None,
         roi_kwargs=None,
@@ -321,6 +326,53 @@ class BaseDataset(Dataset):
             index = index[:limit]
         return index
 
+    def save_in_video_format(
+        self, codec, min_vals=None, max_vals=None, normalize_dims=(0, 4)
+    ):
+        """
+        Convert audio to codec video, normalize and save.
+
+        Args:
+            codec (nn.Module): audio codec from src.transforms.
+            min_vals (float | Tensor): min_vals for original video.
+            max_vals (float | Tensor): max_vals for original video.
+            normalize_dims (int | tuple): dims for normalization. Use 0 for Batch-only.
+                Use (0, 4) for batch and channel-wise normalization.
+        """
+        codec_sample_rate = codec.codec.metadata["kwargs"]["sample_rate"]
+        assert self.target_sr == codec_sample_rate, "Sample rate mismatch."
+
+        for elem in tqdm(self._index, desc="Saving as video"):
+            audio_path = elem["audio_path"]
+            audio = self.load_audio(audio_path)
+            # peak-normalization
+            audio = audio / audio.abs().max()
+
+            codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
+            codec_video, min_vals_list, max_vals_list = normalize_video(
+                codec_video,
+                min_vals=min_vals,
+                max_vals=max_vals,
+                return_min_max_values=True,
+                normalize_dims=normalize_dims,
+            )
+
+            codec_video = codec_video.squeeze()  # (H, W, T)
+            codec_video = codec_video.permute(2, 0, 1)
+            codec_video = codec_video.contiguous()
+
+            codec_video = (codec_video * 255).to(torch.uint8)
+
+            suffix = Path(audio_path).suffix
+            video_path = audio_path[: -(len(suffix))] + "_codec.mkv"
+            min_vals_path = audio_path[: -(len(suffix))] + "_min_vals.pth"
+            max_vals_path = audio_path[: -(len(suffix))] + "_max_vals.pth"
+
+            save_grayscale_video_ffv1(codec_video.clone().numpy(), str(video_path))
+
+            torch.save(min_vals_list, min_vals_path)
+            torch.save(max_vals_list, max_vals_path)
+
     def simulate_lensless(
         self,
         lensless_tag,
@@ -341,7 +393,7 @@ class BaseDataset(Dataset):
         Args:
             lensless_tag (str): tag for saving lensless codec.
             psf_path (str): path to .npy array with saved PSF.
-            codec (nn.Module | None): audio codec from src.transforms.
+            codec (nn.Module): audio codec from src.transforms.
             roi_kwargs (dict | None): top_left, height, and width for ROI.
             resize_coef (int): the scaling factor for resize.
             normalize (bool): whether to rescale lensless output via peak-normalization.
