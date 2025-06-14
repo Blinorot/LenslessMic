@@ -66,7 +66,7 @@ def load_grayscale_video_ffv1(path: str) -> np.ndarray:
     Args:
         path (str): path to the FFV1-encoded .mkv video file.
     Returns:
-        video (np.ndarray): loaded video.
+        video (np.ndarray): loaded video. (TxHxW)
     """
     ffmpeg = shutil.which("ffmpeg")
     ffprobe = shutil.which("ffprobe")

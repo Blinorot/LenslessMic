@@ -17,6 +17,7 @@ import os
 import pathlib as plib
 import re
 import shutil
+import tempfile
 import time
 from fractions import Fraction
 
@@ -36,6 +37,8 @@ from lensless.hardware.constants import (
 from lensless.hardware.slm import adafruit_sub2full, set_programmable_mask
 from lensless.utils.image import bayer2rgb_cc, resize
 from lensless.utils.io import save_image
+from src.datasets.data_utils import load_grayscale_video_ffv1, save_grayscale_video_ffv1
+from src.logger.utils import rgb2gray_np
 from src.utils.io_utils import ROOT_PATH
 
 
@@ -214,7 +217,7 @@ def collect_dataset(config):
     current_bg = {}
     shutter_speed = init_shutter_speed
     for i, _file in enumerate(tqdm.tqdm(files[start_idx:])):
-        # save file in output directory as PNG
+        # save file in output directory as MKV
         output_fp = output_dir / _file.name
         output_fp = output_fp.with_suffix(f".{config.output_file_ext}")
 
@@ -224,75 +227,99 @@ def collect_dataset(config):
                 shutil.copyfile(_file, output_fp)
                 time.sleep(1)
             else:
-                # display img
-                display_img(_file, config, init_brightness)
-                # capture img
-                output, _, _, camera = capture_screen(
-                    MAX_LEVEL,
-                    MAX_TRIES,
-                    MIN_LEVEL,
-                    _file,
-                    brightness_vals,
-                    camera,
-                    config,
-                    down,
-                    exposure_vals,
-                    g,
-                    i,
-                    init_brightness,
-                    shutter_speed,
-                    None,
-                    n_tries_vals,
-                    output_fp,
-                    start_idx,
-                )
-
-                if config.capture.measure_bg:
-                    # name of background for current image
-                    bg_name = plib.Path(config.capture.bg_fp + str(i)).with_suffix(
-                        f".{config.output_file_ext}"
+                video = load_grayscale_video_ffv1(str(_file))
+                output_video_list = []
+                for frame_ind in range(len(video.shape[0])):
+                    frame = video[frame_ind]  # H x W
+                    tmp = Image.fromarray(frame, mode="L")
+                    with tempfile.NamedTemporaryFile(
+                        suffix=".png", delete=False
+                    ) as tmp_file:
+                        tmp.save(tmp_file)
+                        tmp_path = tmp_file.name
+                    # display img
+                    display_img(tmp_path, config, init_brightness)
+                    os.remove(tmp_path)
+                    # capture img
+                    output, _, _, camera = capture_screen(
+                        MAX_LEVEL,
+                        MAX_TRIES,
+                        MIN_LEVEL,
+                        _file,
+                        brightness_vals,
+                        camera,
+                        config,
+                        down,
+                        exposure_vals,
+                        g,
+                        i,
+                        init_brightness,
+                        shutter_speed,
+                        None,
+                        n_tries_vals,
+                        output_fp,
+                        start_idx,
                     )
-                    bg = output_dir / bg_name
 
-                    # append current file to bg list
-                    if str(bg_name) not in current_bg:
-                        current_bg[str(bg_name)] = str(_file.name)
-                    else:
-                        current_bg[str(bg_name)].append(str(_file.name))
-                    # capture background periodically
-                    if i % config.capture.measure_bg == 0 or (i == n_files - 1):
-                        bg_name = str(bg_name)
-                        # push the last bg-capture pairs
-                        if current_bg:
-                            with open(output_dir / "bg_mappings.json", "a") as outfile:
-                                json.dump(current_bg, outfile, indent=4)
-                        current_bg = {}
-                        # current_bg[bg_name] = None
+                    output_video_list.append(output)
 
-                        # display bg
-                        display_img(None, config, brightness=init_brightness)
-                        # capture bg
-                        output, shutter_speed, init_brightness, camera = capture_screen(
-                            MAX_LEVEL,
-                            0,
-                            MIN_LEVEL,
-                            plib.Path(config.capture.bg_fp + str(i)).with_suffix(
-                                f".{config.output_file_ext}"
-                            ),
-                            brightness_vals,
-                            camera,
-                            config,
-                            down,
-                            exposure_vals,
-                            g,
-                            i,
-                            init_brightness,
-                            shutter_speed,
-                            None,
-                            n_tries_vals,
-                            bg,
-                            start_idx,
+                    # TODO think about bg?
+                    if config.capture.measure_bg:
+                        # name of background for current image
+                        bg_name = plib.Path(config.capture.bg_fp + str(i)).with_suffix(
+                            f".{config.output_file_ext}"
                         )
+                        bg = output_dir / bg_name
+
+                        # append current file to bg list
+                        if str(bg_name) not in current_bg:
+                            current_bg[str(bg_name)] = str(_file.name)
+                        else:
+                            current_bg[str(bg_name)].append(str(_file.name))
+                        # capture background periodically
+                        if i % config.capture.measure_bg == 0 or (i == n_files - 1):
+                            bg_name = str(bg_name)
+                            # push the last bg-capture pairs
+                            if current_bg:
+                                with open(
+                                    output_dir / "bg_mappings.json", "a"
+                                ) as outfile:
+                                    json.dump(current_bg, outfile, indent=4)
+                            current_bg = {}
+                            # current_bg[bg_name] = None
+
+                            # display bg
+                            display_img(None, config, brightness=init_brightness)
+                            # capture bg
+                            (
+                                output,
+                                shutter_speed,
+                                init_brightness,
+                                camera,
+                            ) = capture_screen(
+                                MAX_LEVEL,
+                                0,
+                                MIN_LEVEL,
+                                plib.Path(config.capture.bg_fp + str(i)).with_suffix(
+                                    f".{config.output_file_ext}"
+                                ),
+                                brightness_vals,
+                                camera,
+                                config,
+                                down,
+                                exposure_vals,
+                                g,
+                                i,
+                                init_brightness,
+                                shutter_speed,
+                                None,
+                                n_tries_vals,
+                                bg,
+                                start_idx,
+                            )
+                # concat frames into video and save
+                output_video = np.stack(output_video_list, axis=0)
+                save_grayscale_video_ffv1(output_video, str(output_fp))
 
         if recon is not None:
             # normalize and remove background
@@ -393,13 +420,21 @@ def capture_screen(
                 nbits_out=8,
             )
 
+            # convert to grayscale
+            output = output[None, None, ...]  # B x D x H x W x C
+            output = output.astype(np.float32) / 255  # to float
+            output = rgb2gray_np(output)  # B x D x H x W x 1
+            output = (output * 255).astype(np.uint8)  # to uint8
+            output = output[0, 0, :, :, 0]  # H x W
+
             # if down:
             #     output = resize(
             #         output[None, ...], factor=1 / down, interpolation=cv2.INTER_CUBIC
             #     )[0]
 
             # save image
-            save_image(output, output_fp, normalize=False)
+            # ignore for video
+            # save_image(output, output_fp, normalize=False)
 
             # print range
             print(f"{output_fp}, range: {output.min()} - {output.max()}")

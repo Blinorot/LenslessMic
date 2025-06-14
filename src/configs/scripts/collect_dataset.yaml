@@ -1,11 +1,11 @@
 # python scripts/collect_dataset_on_device.py -cn collect_dataset
 
 input_dir: /mnt/mirflickr/all
-input_file_ext: jpg
+input_file_ext: mkv
 
 # can pass existing folder to continue measurement
 output_dir: null
-output_file_ext: png
+output_file_ext: mkv
 
 # files to measure
 n_files: 15
