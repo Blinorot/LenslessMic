@@ -89,7 +89,8 @@ def display(
 
     # load image
     img_og = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
-    img_og = cv2.cvtColor(img_og, cv2.COLOR_BGR2RGB)
+    if img_og.ndim == 3 and img_og.shape[2] == 3:
+        img_og = cv2.cvtColor(img_og, cv2.COLOR_BGR2RGB)
     if landscape:
         if img_og.shape[0] > img_og.shape[1]:
             img_og = np.rot90(img_og)
@@ -160,7 +161,7 @@ def display(
                 (int(padding_amount[1] // 2), int(padding_amount[1] // 2)),
                 (0, 0),
             )
-            img = np.pad(img_og, pad_width=pad_width)
+            img = np.pad(img_og, pad_width=pad_width[: img.ndim])
         else:
             img = img_og
 
