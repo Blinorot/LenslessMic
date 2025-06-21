@@ -21,6 +21,7 @@ picamerax>=20.9.1
 
 # image
 imageio[ffmpeg]
+opencv-python
 scikit-image
 lpips==0.1.4
 
