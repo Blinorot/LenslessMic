@@ -11,6 +11,12 @@ Parameters set in: configs/collect_dataset.yaml
 To test on local machine, set dummy=True (which will just copy the files over).
 
 """
+# isort: off
+import sys
+
+sys.modules["torch"] = None  # Prevent Python from trying to import torch
+# isort: on
+
 import glob
 import json
 import os

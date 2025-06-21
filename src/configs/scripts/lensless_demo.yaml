@@ -1,0 +1,124 @@
+# hydra:
+#   job:
+#     chdir: True    # change to output folder
+
+
+fp: data/original/tree.png
+output: demo_lensless   # output folder for results
+save: True
+plot: False
+
+rpi:
+  username: null
+  hostname: null
+  python: ~/LenslessPiCam/lensless_env/bin/python
+
+display:
+  # default to this screen: https://www.dell.com/en-us/work/shop/dell-ultrasharp-usb-c-hub-monitor-u2421e/apd/210-axmg/monitors-monitor-accessories#techspecs_section
+  screen_res: [1920, 1200]   # width, height
+  image_res: [900, 1200]
+  pad: 0
+  hshift: 0
+  vshift: -30
+  brightness: 100
+  rot90: 3
+
+  # display point source on screen (provide number of pixels)
+  psf: null
+  # all black screen
+  black: False
+  # all white screen
+  white: False
+
+capture:
+  sensor: rpi_hq
+  gamma: null # for visualization
+  exp: 1
+  delay: 2
+  script: ~/LenslessPiCam/scripts/measure/on_device_capture.py
+  iso: 100
+  config_pause: 2
+  sensor_mode: "0"
+  # nbits_out: 12
+  nbits_out: 8    # light data transer, doesn't seem to worsen performance
+  nbits: 12
+  legacy: True
+  gray: False     # only for legacy=True, if bayer=True, remote script returns grayscale data
+  # rgb: False   # only for legacy=True, if bayer=True, remote script return RGB data
+  raw_data_fn: raw_data
+  bayer: True
+  source: white
+
+  # remote script return Bayer data, full res
+  # awb_gains: null
+  # rgb: False
+  # down: null
+
+  # remote script returns RGB data
+  rgb: True
+  down: 4
+  awb_gains: [1.7, 1.3]
+
+
+camera:
+  # these gains are not applied if rgb=True
+  red_gain: 1.9
+  blue_gain: 1.2
+  # -- path to PSF,
+  # psf: data/psf/tape_rgb_31032023.png
+  # -- DigiCam configuration
+  psf:
+    seed: 0
+    device: adafruit
+    mask_shape: [54, 26]
+    mask_center: [57, 77]
+    flipud: True
+  background: null
+
+
+recon:
+  gamma: null
+  downsample: 4
+  dtype: float32
+  use_torch: True
+  torch_device: cuda:0
+
+  algo: admm
+
+  # -- fista
+  fista:
+    n_iter: 300
+    disp_iter: null
+    tk: 1
+
+  # -- admm
+  admm:
+    n_iter: 10
+    disp_iter: null
+    mu1: 1e-6
+    mu2: 1e-5
+    mu3: 4e-5
+    tau: 0.0001
+
+  # -- unrolled admm
+  unrolled_admm:
+    n_iter: 20
+    disp_iter: null
+    # download from here: https://drive.switch.ch/index.php/s/A4Aq6rTSBwzcyUP
+    checkpoint_fp: models/UnrolledADMM20_CelebA_20231306.pt
+
+  # -- unet
+  unet:
+    gpu: True
+    # download from here: https://drive.switch.ch/index.php/s/A4Aq6rTSBwzcyUP
+    model_path: models/wallerlab_unet.pb
+    # model_path: models/wallerlab_unet_inversion.pb
+    input_shape: [1, 270, 480, 3]
+
+postproc:
+  # crop_hor: null
+  # crop_vert: null
+  # # crop in percent to extract region of interest
+  # # set to null to skip
+  crop_hor: [0.28, 0.75]
+  crop_vert: [0.2, 0.82]

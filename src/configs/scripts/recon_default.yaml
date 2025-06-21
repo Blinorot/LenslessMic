@@ -1,0 +1,97 @@
+hydra:
+  job:
+    chdir: True    # change to output folder
+
+input:
+  # File path for recorded PSF
+  psf: data/psf/tape_rgb.png
+  # File path for raw data
+  data: data/raw_data/thumbs_up_rgb.png
+  dtype: float32
+  original: null   # ground truth image
+  background: null   # background image
+
+torch: False
+torch_device: 'cpu'
+
+preprocess:
+  normalize: True
+  # Downsampling factor along X and Y
+  downsample: 4
+  # Image shape (height, width) for reconstruction.
+  shape: null
+  # Whether to flip image.
+  flip: False
+  # Whether image is raw bayer data.
+  bayer: False
+  blue_gain: null
+  red_gain: null
+  # Same PSF for all channels (sum) or unique PSF for RGB.
+  single_psf: False
+  # Whether to perform construction in grayscale.
+  gray: False
+  bg_pix: [5, 25]   # null to skip
+
+
+display:
+  # How many iterations to wait for intermediate plot.
+  # Set to negative value for no intermediate plots.
+  disp: 50
+  # Whether to plot results.
+  plot: True
+  # Gamma factor for plotting.
+  gamma: null
+
+# Whether to save intermediate and final reconstructions.
+save: True
+
+gradient_descent:
+  # Number of iterations
+  n_iter: 300
+  # Method: vanilla, nesterov, fista
+  method: fista
+  # Hyperparameters for each method
+  nesterov:
+    p: 0
+    mu: 0.9
+  fista:
+    tk: 1
+
+admm:
+  # Number of iterations
+  n_iter: 5
+  # Hyperparameters
+  mu1: 1e-6
+  mu2: 1e-5
+  mu3: 4e-5
+  tau: 0.0001
+  # PnP
+  denoiser: null  # set to use PnP
+  # denoiser:
+  #   network: DruNet
+  #   noise_level: 10   # within [0, 255]
+  #   use_dual: False  # just for ADMM
+  #Loading unrolled model
+  unrolled: false
+  checkpoint_fp: null
+  pre_process_model:
+    network : null  # UnetRes or DruNet or null
+    depth : 2 # depth of each up/downsampling layer. Ignore if network is DruNet
+  post_process_model:
+    network : null  # UnetRes or DruNet or null
+    depth : 2 # depth of each up/downsampling layer. Ignore if network is DruNet
+
+apgd:
+  # Stopping criteria
+  max_iter: 1000
+  rel_error: 1e-6
+  acceleration: True
+  # Differentiable prior / regularization: l2, null
+  diff_penalty: null
+  diff_lambda: 0.001
+  # Proximal prior / regularization: nonneg, l1, null
+  prox_penalty: nonneg
+  prox_lambda: 0.001
+  # Lipschitz
+  lipschitz_tight: True
+  lipschitz_tol: 1.0
