@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 import torch
-from torchvision.transforms import ToTensor
+from torchvision.transforms.v2 import ToTensor
 
 from lensless.utils.plot import plot_image as lensless_plot_image
 
@@ -55,24 +55,6 @@ def rgb2gray(rgb):
 
     weights = torch.tensor([0.2989, 0.5870, 0.1140], device=rgb.device, dtype=rgb.dtype)
     return torch.einsum("bdhwc,c->bdhw", rgb, weights).unsqueeze(-1)
-
-
-def rgb2gray_np(rgb):
-    """
-    Convert RGB image to grayscale.
-
-    Args:
-        rgb (np.ndarray): array of shape (B, D, H, W, C)
-    Returns:
-        gray (np.ndarray): grayscale array of shape (B, D, H, W, 1)
-    """
-    if rgb.shape[-1] == 1:  # already grayscale
-        return rgb
-    assert len(rgb.shape) == 5, "Input must be of shape (B, D, H, W, C)"
-
-    weights = np.array([0.2989, 0.5870, 0.1140], dtype=rgb.dtype)
-    gray = np.einsum("bdhwc,c->bdhw", rgb, weights)
-    return gray[..., None]
 
 
 def plot_triplet(axs, lensed, lensless, reconstructed, tag="", index=0):

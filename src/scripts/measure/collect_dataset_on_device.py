@@ -13,14 +13,21 @@ To test on local machine, set dummy=True (which will just copy the files over).
 """
 # isort: off
 import sys
+import types
 
 
-class TorchMock:
+class MockModule(types.ModuleType):
     def __getattr__(self, name):
-        raise ImportError("Torch is mocked and not available.")
+        raise ImportError(
+            f"Module '{self.__name__}' is mocked and '{name}' is not available."
+        )
 
 
-sys.modules["torch"] = TorchMock()  # Prevent Python from trying to import torch
+# List of modules we ignore from other imports
+MOCK_MODULES = ["torch"]
+
+for mod in MOCK_MODULES:
+    sys.modules[mod] = MockModule(mod)
 # isort: on
 
 import glob
@@ -42,6 +49,7 @@ from hydra.utils import to_absolute_path
 from picamerax import PiCamera
 from PIL import Image
 
+import src.datasets.data_utils as data_utils
 from lensless.hardware.constants import (
     RPI_HQ_CAMERA_BLACK_LEVEL,
     RPI_HQ_CAMERA_CCM_MATRIX,
@@ -49,9 +57,25 @@ from lensless.hardware.constants import (
 from lensless.hardware.slm import adafruit_sub2full, set_programmable_mask
 from lensless.utils.image import bayer2rgb_cc, resize
 from lensless.utils.io import save_image
-from src.datasets.data_utils import load_grayscale_video_ffv1, save_grayscale_video_ffv1
-from src.logger.utils import rgb2gray_np
 from src.utils.io_utils import ROOT_PATH
+
+
+def rgb2gray_np(rgb):
+    """
+    Convert RGB image to grayscale.
+
+    Args:
+        rgb (np.ndarray): array of shape (B, D, H, W, C)
+    Returns:
+        gray (np.ndarray): grayscale array of shape (B, D, H, W, 1)
+    """
+    if rgb.shape[-1] == 1:  # already grayscale
+        return rgb
+    assert len(rgb.shape) == 5, "Input must be of shape (B, D, H, W, C)"
+
+    weights = np.array([0.2989, 0.5870, 0.1140], dtype=rgb.dtype)
+    gray = np.einsum("bdhwc,c->bdhw", rgb, weights)
+    return gray[..., None]
 
 
 def convert(text):
@@ -239,7 +263,7 @@ def collect_dataset(config):
                 shutil.copyfile(_file, output_fp)
                 time.sleep(1)
             else:
-                video = load_grayscale_video_ffv1(str(_file))
+                video = data_utils.load_grayscale_video_ffv1(str(_file))
                 output_video_list = []
                 for frame_ind in range(len(video.shape[0])):
                     frame = video[frame_ind]  # H x W
@@ -331,7 +355,7 @@ def collect_dataset(config):
                             )
                 # concat frames into video and save
                 output_video = np.stack(output_video_list, axis=0)
-                save_grayscale_video_ffv1(output_video, str(output_fp))
+                data_utils.save_grayscale_video_ffv1(output_video, str(output_fp))
 
         if recon is not None:
             # normalize and remove background

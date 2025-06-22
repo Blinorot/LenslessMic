@@ -2,10 +2,7 @@ import logging
 import random
 from pathlib import Path
 
-import imageio.v2 as iio
 import numpy as np
-import safetensors
-import safetensors.torch
 import torch
 import torchaudio
 from torch.utils.data import Dataset
