@@ -87,7 +87,7 @@ Installation may depend on your task. The general steps are the following:
    python3 -m venv project_env
 
    # activate env
-   source project_env
+   source project_env/bin/activate
    ```
 
 1. Install all required packages
@@ -99,6 +99,39 @@ Installation may depend on your task. The general steps are the following:
 2. Install `pre-commit`:
    ```bash
    pre-commit install
+   ```
+
+Raspberry Pi installation:
+
+0. Install requirements:
+
+   ```bash
+   pip install -r rpi_requirements.txt
+   ```
+
+1. Install `rawpy` from source:
+
+   ```bash
+   git clone https://github.com/LibRaw/LibRaw.git libraw
+   git clone https://github.com/LibRaw/LibRaw-cmake.git libraw-cmake
+   cd libraw
+   git checkout 0.20.0
+   cp -R ../libraw-cmake/* .
+   cmake .
+   sudo make install
+   sudo ldconfig
+
+   pip install "cython<3"
+   git clone --branch v0.16.0 https://github.com/letmaik/rawpy.git
+   cd rawpy
+   CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" pip install --no-cache-dir .
+   ```
+
+2. Install extra packages:
+   ```bash
+   pip install git+https://github.com/LCAV/LenslessPiCam.git
+   pip install git+https://github.com/pvigier/perlin-numpy.git@5e26837db14042e51166eb6cad4c0df2c1907016
+   pip install git+https://github.com/ebezzam/slm-controller.git
    ```
 
 ## How To Use
