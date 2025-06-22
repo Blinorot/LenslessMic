@@ -234,8 +234,9 @@ def collect_dataset(config):
                 video = load_grayscale_video_ffv1(str(_file))
                 video_len = video.shape[0]
                 vid_desc = "Single video capture"
-                output_video_list = []
-                for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
+                video_frames_paths = []
+                # pre-save to avoid extra delays
+                for frame_ind in range(video_len):
                     frame = video[frame_ind]  # H x W
                     tmp = Image.fromarray(frame, mode="L")
                     with tempfile.NamedTemporaryFile(
@@ -243,6 +244,10 @@ def collect_dataset(config):
                     ) as tmp_file:
                         tmp.save(tmp_file)
                         tmp_path = tmp_file.name
+                        video_frames_paths.append(tmp_path)
+                output_video_list = []
+                for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
+                    tmp_path = video_frames_paths[frame_ind]
                     # display img
                     display_img(tmp_path, config, init_brightness)
                     os.remove(tmp_path)
