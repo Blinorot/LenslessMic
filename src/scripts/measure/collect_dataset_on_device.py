@@ -497,7 +497,7 @@ def display_img(_file, config, brightness):
 
     display_image_path = config.display.output_fp
     rot90 = config.display.rot90
-    display_command = f"python -m src.scripts.prep_display_image --fp {_file} --output_path {display_image_path} --screen_res {screen_res[0]} {screen_res[1]} --hshift {hshift} --vshift {vshift} --pad {pad} --brightness {brightness} --rot90 {rot90}"
+    display_command = f"python -m src.scripts.measure.prep_display_image --fp {_file} --output_path {display_image_path} --screen_res {screen_res[0]} {screen_res[1]} --hshift {hshift} --vshift {vshift} --pad {pad} --brightness {brightness} --rot90 {rot90}"
     if config.display.landscape:
         display_command += " --landscape"
     if config.display.image_res is not None:
