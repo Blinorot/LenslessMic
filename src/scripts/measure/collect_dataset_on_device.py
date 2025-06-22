@@ -232,7 +232,7 @@ def collect_dataset(config):
             else:
                 video = load_grayscale_video_ffv1(str(_file))
                 output_video_list = []
-                for frame_ind in range(len(video.shape[0])):
+                for frame_ind in range(video.shape[0]):
                     frame = video[frame_ind]  # H x W
                     tmp = Image.fromarray(frame, mode="L")
                     with tempfile.NamedTemporaryFile(
