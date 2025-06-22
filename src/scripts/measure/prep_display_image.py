@@ -106,6 +106,8 @@ def display(
     if screen_res:
         image_height, image_width = img_og.shape[:2]
         img = np.zeros((screen_res[1], screen_res[0], 3), dtype=img_og.dtype)
+        if img_og.ndim == 2:
+            img = img[..., 0]
 
         if image_res is None:
             # set image with padding and correct aspect ratio
@@ -166,11 +168,11 @@ def display(
             img = img_og
 
     if vshift:
-        nx, _, _ = img.shape
+        nx = img.shape[0]
         img = np.roll(img, shift=int(vshift * nx / 100), axis=0)
 
     if hshift:
-        _, ny, _ = img.shape
+        ny = img.shape[1]
         img = np.roll(img, shift=int(hshift * ny / 100), axis=1)
 
     if brightness:
