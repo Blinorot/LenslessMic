@@ -130,9 +130,9 @@ def collect_dataset(config):
     n_files = len(files)
     print(f"\nNumber of {config.input_file_ext} files :", n_files)
     if config.n_files:
-        print(f"TEST : collecting first {config.n_files} files!")
         files = files[: config.n_files]
         n_files = len(files)
+        print(f"TEST : collecting first {n_files} files!")
 
     if config.runtime:
         # convert to minutes
@@ -231,8 +231,10 @@ def collect_dataset(config):
                 time.sleep(1)
             else:
                 video = load_grayscale_video_ffv1(str(_file))
+                video_len = video.shape[0]
                 output_video_list = []
-                for frame_ind in range(video.shape[0]):
+                for frame_ind in range(video_len):
+                    print(f"Processing {frame_ind}/{video_len} frame:")
                     frame = video[frame_ind]  # H x W
                     tmp = Image.fromarray(frame, mode="L")
                     with tempfile.NamedTemporaryFile(
