@@ -14,7 +14,13 @@ To test on local machine, set dummy=True (which will just copy the files over).
 # isort: off
 import sys
 
-sys.modules["torch"] = None  # Prevent Python from trying to import torch
+
+class TorchMock:
+    def __getattr__(self, name):
+        raise ImportError("Torch is mocked and not available.")
+
+
+sys.modules["torch"] = TorchMock()  # Prevent Python from trying to import torch
 # isort: on
 
 import glob
