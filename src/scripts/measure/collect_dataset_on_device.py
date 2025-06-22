@@ -219,7 +219,8 @@ def collect_dataset(config):
     bg_name = None
     current_bg = {}
     shutter_speed = init_shutter_speed
-    for i, _file in enumerate(tqdm.tqdm(files[start_idx:])):
+    data_desc = "Dataset capture"
+    for i, _file in enumerate(tqdm.tqdm(files[start_idx:], desc=data_desc)):
         # save file in output directory as MKV
         output_fp = output_dir / _file.name
         output_fp = output_fp.with_suffix(f".{config.output_file_ext}")
@@ -232,9 +233,9 @@ def collect_dataset(config):
             else:
                 video = load_grayscale_video_ffv1(str(_file))
                 video_len = video.shape[0]
+                vid_desc = "Single video capture"
                 output_video_list = []
-                for frame_ind in range(video_len):
-                    print(f"Processing {frame_ind}/{video_len} frame:")
+                for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
                     frame = video[frame_ind]  # H x W
                     tmp = Image.fromarray(frame, mode="L")
                     with tempfile.NamedTemporaryFile(
