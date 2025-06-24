@@ -3,7 +3,7 @@ from torch import nn
 
 import lensless
 from lensless.recon.model_dict import download_model, load_model
-from src.lensless.utils import get_roi_indexes
+from src.lensless.utils import fix_perspective, get_roi_indexes
 
 
 class LenslessWrapper(nn.Module):
@@ -45,13 +45,14 @@ class LenslessWrapper(nn.Module):
         for param in self.parameters():
             param.requires_grad = requires_grad
 
-    def forward(self, lensless, roi_kwargs=None):
+    def forward(self, lensless, roi_kwargs=None, corners_list=None):
         """
         Reconstruct lensless image.
 
         Args:
             lensless (Tensor): lensless image (BxDxHxWxC).
             roi_kwargs (dict | optional): top_left, height, and width for ROI.
+            corners_list (None | list): list of coordinates for matching corners.
         Returns:
             recon_lensed (Tensor): reconstructed lensed image. If roi_kwargs
                 are provided, the ROI part is returned.
@@ -69,6 +70,10 @@ class LenslessWrapper(nn.Module):
                 recon_list.append(self.recon.apply(plot=False).unsqueeze(0))
             recon_lensed = torch.cat(recon_list, dim=0)
 
+        if corners_list is not None:
+            assert roi_kwargs is not None, "Define ROI kwargs to fix perspective"
+            recon_lensed = fix_perspective(recon_lensed, corners_list, roi_kwargs)
+
         if roi_kwargs is not None:
             roi_indexes = get_roi_indexes(
                 n_dim=len(recon_lensed.shape), axis=(-3, -2), **roi_kwargs
@@ -78,13 +83,14 @@ class LenslessWrapper(nn.Module):
 
         return recon_lensed
 
-    def reconstruct_video(self, lensless_video, roi_kwargs=None):
+    def reconstruct_video(self, lensless_video, roi_kwargs=None, corners_list=None):
         """
         Reconstruct lensless video.
 
         Args:
             lensless_video (Tensor): lensless video (BxDxHxWxCxT_latent).
             roi_kwargs (dict | optional): top_left, height, and width for ROI.
+            corners_list (None | list): list of coordinates for matching corners.
         Returns:
             recon_lensed_video (Tensor): reconstructed lensed video. If roi_kwargs
                 are provided, the ROI part is returned.
@@ -94,7 +100,7 @@ class LenslessWrapper(nn.Module):
             lensless_video = lensless_video.permute(0, 5, 1, 2, 3, 4)
             B, T, D, H, W, C = lensless_video.shape
             lensless_video = lensless_video.reshape(B * T, D, H, W, C)
-            recon_lensed_video = self.forward(lensless_video, roi_kwargs)
+            recon_lensed_video = self.forward(lensless_video, roi_kwargs, corners_list)
             _, _, H, W, _ = recon_lensed_video.shape
             recon_lensed_video = recon_lensed_video.reshape(B, T, D, H, W, C)
             recon_lensed_video = recon_lensed_video.permute(0, 2, 3, 4, 5, 1)
@@ -105,7 +111,7 @@ class LenslessWrapper(nn.Module):
         recon_lensed_video = []
         for frame_index in range(lensless_video.shape[-1]):
             frame = lensless_video[..., frame_index]
-            recon_lensed = self.forward(frame, roi_kwargs).unsqueeze(-1)
+            recon_lensed = self.forward(frame, roi_kwargs, corners_list).unsqueeze(-1)
             recon_lensed_video.append(recon_lensed)
         recon_lensed_video = torch.cat(recon_lensed_video, dim=-1)
         return recon_lensed_video

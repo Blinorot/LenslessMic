@@ -405,8 +405,10 @@ def capture_screen(
         fact_decrease = config.capture.fact_decrease
         n_tries = 0
 
-        camera.shutter_speed = int(init_shutter_speed)
-        time.sleep(config.capture.config_pause)
+        if MAX_TRIES > 0:
+            # shutter speed is constant for MAX_TRIES == 0
+            camera.shutter_speed = int(init_shutter_speed)
+            time.sleep(config.capture.config_pause)
         current_shutter_speed = camera.shutter_speed
 
         current_screen_brightness = init_brightness

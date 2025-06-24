@@ -11,7 +11,9 @@ def reconstruct_codec(
     max_vals,
     resize_coef=1,
     roi_kwargs=None,
+    corners_list=None,
     group_frames_kwargs=None,
+    normalize_lensless=False,
 ):
     """
     Reconstruct lensed codec video from a lensless one.
@@ -27,13 +29,22 @@ def reconstruct_codec(
         resize_coef (int): the scaling factor for the original lensed
             codec video.
         roi_kwargs (dict | optional): top_left, height, and width for ROI.
+        corners_list (None | list): list of coordinates for matching corners.
         group_frames_kwargs (dict | None): configuration for ungroup_frames function.
             See src.lensless.utils.ungroup_frames. Ignored if None.
+        normalize_lensless (bool): whether to peak-normalize lensless video.
     Returns:
         recon_lensed_video (Tensor): reconstructed lensed codec video.
             If roi_kwargs are provided, the ROI part is returned.
     """
-    recon_codec_video = recon_model.reconstruct_video(lensless_codec_video, roi_kwargs)
+    if normalize_lensless:
+        # set min = 0 to only change max.
+        min_max_normalizer = MinMaxNormalize(min=0, dim=(0, 4, 5))
+        lensless_codec_video = min_max_normalizer.normalize(lensless_codec_video)
+
+    recon_codec_video = recon_model.reconstruct_video(
+        lensless_codec_video, roi_kwargs, corners_list
+    )
 
     if group_frames_kwargs is not None:
         recon_codec_video = ungroup_frames(recon_codec_video, **group_frames_kwargs)

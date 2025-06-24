@@ -1,6 +1,7 @@
 import io
 
 import matplotlib.animation as animation
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
@@ -12,7 +13,9 @@ from lensless.utils.plot import plot_image as lensless_plot_image
 plt.switch_backend("agg")  # fix RuntimeError: main thread is not in main loop
 
 
-def plot_tensor_as_video(tensor, cmap="grey", interval=100):
+def plot_tensor_as_video(
+    tensor, cmap="gray", interval=100, roi_kwargs=None, corners_list=None
+):
     """
     Plot video corresponding to the tensor.
 
@@ -20,15 +23,35 @@ def plot_tensor_as_video(tensor, cmap="grey", interval=100):
         tensor (Tensor): tensor of shape (T, H, W, C).
         interval (int): interval in ms between frames.
         cmap (str): colormap for grayscale images.
+        roi_kwargs (None | dict): kwargs for a rectangular box. Shows ROI.
+        corners_list (None | list): list of coordinates for plotting corners.
     Returns:
         ani: animation video in the HTML5 format.
     """
-    fig = plt.figure()
+    fig, ax = plt.subplots(1, 1)
     im = plt.imshow(tensor[0], cmap=cmap)
+
+    if roi_kwargs is not None:
+        # Add rectangle (adjust Y to convert top-left to bottom-left)
+        y, x = roi_kwargs["top_left"]  # x correspond to width, image is H x W
+        height = roi_kwargs["height"]
+        width = roi_kwargs["width"]
+        rect = patches.Rectangle(
+            (x, y), width, height, linewidth=2, edgecolor="red", facecolor="none"
+        )
+        ax.add_patch(rect)
+
+    scatter_dots = []
+    if corners_list is not None:
+        for py, px in corners_list:
+            (dot,) = ax.plot(px, py, "go", markersize=5)  # green dot
+            scatter_dots.append(dot)
 
     def update(frame):
         im.set_array(tensor[frame])
-        return [im]
+        if roi_kwargs is not None:
+            return [im, rect] + scatter_dots
+        return [im] + scatter_dots
 
     ani = animation.FuncAnimation(
         fig, update, frames=len(tensor), interval=interval

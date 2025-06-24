@@ -1,4 +1,5 @@
 import torch
+import torchvision.transforms.v2 as T
 
 from src.transforms import MinMaxNormalize
 
@@ -23,6 +24,62 @@ def get_roi_indexes(top_left, height, width, n_dim=4, axis=(-3, -2)):
     index[axis[1]] = slice(top_left[1], top_left[1] + width)
 
     return tuple(index)
+
+
+def fix_video_perspective(video, corners_list, roi_kwargs):
+    """
+    Fix perspective using ROI region and corner points.
+
+    Args:
+        video (Tensor): video (BxDxHxWxCxT).
+        corners_list (None | list): list of coordinates for matching corners.
+        roi_kwargs (None | dict): kwargs for a rectangular box. Shows ROI.
+    Returns:
+        fixed_video (Tensor): fixed video (BxDxHxWxCxT).
+    """
+    fixed_video = torch.zeros_like(video)
+    for frame_ind in range(video.shape[-1]):
+        frame = video[..., frame_ind]
+        frame = fix_perspective(frame, corners_list, roi_kwargs)
+        fixed_video[..., frame_ind] = frame
+    return fixed_video
+
+
+def fix_perspective(img, corners_list, roi_kwargs):
+    """
+    Fix perspective using ROI region and corner points.
+
+    Args:
+        img (Tensor): image (BxDxHxWxC).
+        corners_list (None | list): list of coordinates for matching corners.
+        roi_kwargs (None | dict): kwargs for a rectangular box. Shows ROI.
+    Returns:
+        fixed_img (Tensor): fixed image (BxDxHxWxC).
+    """
+    top_left_corner = roi_kwargs["top_left"]
+    top_right_corner = (top_left_corner[0], top_left_corner[1] + roi_kwargs["width"])
+    bot_left_corner = (top_left_corner[0] + roi_kwargs["height"], top_left_corner[1])
+    bot_right_corner = (
+        top_left_corner[0] + roi_kwargs["height"],
+        top_left_corner[1] + roi_kwargs["width"],
+    )
+
+    corners_output = [
+        top_left_corner,
+        top_right_corner,
+        bot_left_corner,
+        bot_right_corner,
+    ]
+
+    B, D, H, W, C = img.shape
+    img = img.permute(0, 1, 4, 2, 3)
+    img = img.reshape(B * D, C, H, W)
+    img = T.functional.perspective(
+        img, startpoints=corners_list, endpoints=corners_output
+    )
+    img = img.reshape(B, D, C, H, W)
+    img = img.permute(0, 1, 3, 4, 2)
+    return img
 
 
 def normalize_video(

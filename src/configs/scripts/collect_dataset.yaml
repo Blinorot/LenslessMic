@@ -35,7 +35,7 @@ display:
   pad: 0
   hshift: 0
   vshift: -10
-  brightness: 80   # max brightness
+  brightness: 100   # max brightness
   rot90: 3
   delay: 2    # to allow picture to display
   landscape: False    # whether to force landscape
