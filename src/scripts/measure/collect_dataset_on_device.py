@@ -445,12 +445,6 @@ def capture_screen(
             # print range
             print(f"{output_fp}, range: {output.min()} - {output.max()}")
 
-            n_tries += 1
-            if n_tries > MAX_TRIES:
-                if MAX_TRIES != 0:
-                    print("Max number of tries reached!")
-                break
-
             # get max in RGB
             max_pixel_val = output.max()
 
@@ -460,6 +454,12 @@ def capture_screen(
             output = rgb2gray_np(output)  # B x D x H x W x 1
             output = (output * 255).astype(np.uint8)  # to uint8
             output = output[0, 0, :, :, 0]  # H x W
+
+            n_tries += 1
+            if n_tries > MAX_TRIES:
+                if MAX_TRIES != 0:
+                    print("Max number of tries reached!")
+                break
 
             if max_pixel_val < MIN_LEVEL:
                 # increase exposure
