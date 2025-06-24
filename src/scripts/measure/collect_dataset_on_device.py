@@ -433,13 +433,6 @@ def capture_screen(
                 nbits_out=8,
             )
 
-            # convert to grayscale
-            output = output[None, None, ...]  # B x D x H x W x C
-            output = output.astype(np.float32) / 255  # to float
-            output = rgb2gray_np(output)  # B x D x H x W x 1
-            output = (output * 255).astype(np.uint8)  # to uint8
-            output = output[0, 0, :, :, 0]  # H x W
-
             # if down:
             #     output = resize(
             #         output[None, ...], factor=1 / down, interpolation=cv2.INTER_CUBIC
@@ -458,7 +451,15 @@ def capture_screen(
                     print("Max number of tries reached!")
                 break
 
+            # get max in RGB
             max_pixel_val = output.max()
+
+            # convert to grayscale
+            output = output[None, None, ...]  # B x D x H x W x C
+            output = output.astype(np.float32) / 255  # to float
+            output = rgb2gray_np(output)  # B x D x H x W x 1
+            output = (output * 255).astype(np.uint8)  # to uint8
+            output = output[0, 0, :, :, 0]  # H x W
 
             if max_pixel_val < MIN_LEVEL:
                 # increase exposure
