@@ -171,14 +171,22 @@ def collect_dataset(config):
         camera.close()
 
         # -- now set up camera with desired settings
+        max_increase = (
+            config.capture.fact_increase * config.capture.max_tries
+            if config.capture.max_tries > 0
+            else 1
+        )
+        max_exposure = min(20, config.capture.exposure * max_increase)
         if config.capture.framerate is None:
-            warnings.warn("Framerate is not given. Setting it to 1 / exposure (s)")
-            framerate = 1 / config.capture.exposure
-        elif config.capture.framerate > 1 / config.capture.exposure:
+            framerate = 1 / max_exposure
             warnings.warn(
-                "Framerate should be less or equal 1 / exposure (s). Resetting framerate"
+                f"Framerate is not given. Setting it to 1 / max_exposure = {framerate}"
             )
-            framerate = 1 / config.capture.exposure
+        elif config.capture.framerate > 1 / max_exposure:
+            warnings.warn(
+                f"Framerate should be less or equal 1 / max_exposure = {1 / max_exposure}. Resetting framerate"
+            )
+            framerate = 1 / max_exposure
         else:
             framerate = config.capture.framerate
 
