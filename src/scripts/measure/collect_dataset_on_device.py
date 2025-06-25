@@ -172,7 +172,7 @@ def collect_dataset(config):
 
         # -- now set up camera with desired settings
         max_increase = (
-            config.capture.fact_increase * config.capture.max_tries
+            config.capture.fact_increase * config.max_tries
             if config.capture.max_tries > 0
             else 1
         )
