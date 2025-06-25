@@ -19,6 +19,7 @@ import re
 import shutil
 import tempfile
 import time
+import warnings
 from fractions import Fraction
 
 import cv2
@@ -170,9 +171,18 @@ def collect_dataset(config):
         camera.close()
 
         # -- now set up camera with desired settings
-        camera = PiCamera(
-            sensor_mode=0, resolution=tuple(res), framerate=config.capture.framerate
-        )
+        if config.capture.framerate is None:
+            warnings.warn("Framerate is not given. Setting it to 1 / exposure (s)")
+            framerate = 1 / config.capture.exposure
+        elif config.capture.framerate > 1 / config.capture.exposure:
+            warnings.warn(
+                "Framerate should be less or equal 1 / exposure (s). Resetting framerate"
+            )
+            framerate = 1 / config.capture.exposure
+        else:
+            framerate = config.capture.framerate
+
+        camera = PiCamera(sensor_mode=0, resolution=tuple(res), framerate=framerate)
 
         # Set ISO to the desired value
         camera.resolution = tuple(res)
@@ -186,8 +196,8 @@ def collect_dataset(config):
             init_shutter_speed = int(config.capture.exposure * 1e6)
         else:
             init_shutter_speed = camera.exposure_speed
-        camera.shutter_speed = init_shutter_speed
         camera.exposure_mode = "off"
+        camera.shutter_speed = init_shutter_speed
 
         # AWB
         if config.capture.awb_gains:
