@@ -54,3 +54,10 @@ capture:
   # awb_gains: null
   fact_increase: 2   # multiplicative factor to increase exposure
   fact_decrease: 1.5
+
+# video processing
+video:
+  patchify: null
+  # patchify:
+  #   patch_height: 16
+  #   patch_width: 16

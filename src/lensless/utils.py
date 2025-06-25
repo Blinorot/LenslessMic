@@ -214,3 +214,59 @@ def ungroup_frames(group_video, n_rows, n_cols, row_space, col_space, n_orig_fra
     video = video[..., :n_orig_frames].clone()
 
     return video
+
+
+def patchify_video(video, patch_height, patch_width, **kwargs):
+    """
+    Split video frames into patches and consider each patch as a frame.
+
+    Args:
+        video (Tensor): tensor of shape (BxDxHxWxCxT)
+        patch_height (int): height of each patch.
+        patch_width (int): width of each patch.
+    Returns:
+        patchified_video (Tensor): patchified video of shape
+            (BxDxpatch_heightxpatch_widthxCxT_patchified)
+    """
+    B, D, H, W, C, T = video.shape
+    assert H % patch_height == 0, "Frame height shall be divisible by patch height."
+    assert W % patch_width == 0, "Frame width shall be divisible by patch width."
+
+    patchified_video = video.reshape(
+        B, D, patch_height, H // patch_height, patch_width, W // patch_width, C, T
+    )
+    patchified_video = patchified_video.permute(0, 1, 2, 4, 6, 3, 5, 7)
+    patchified_video = patchified_video.reshape(B, D, patch_height, patch_width, C, -1)
+
+    return patchified_video
+
+
+def unpatchify_video(
+    patchified_video, patch_height, patch_width, orig_height, orig_width
+):
+    """
+    The inverse of patchify video function. Extracts patches from the
+    time dimension and combines them into single frames.
+
+    Args:
+        patchified_video (Tensor): patchified video of shape
+            (BxDxpatch_heightxpatch_widthxCxT_patchified)
+        patch_height (int): height of each patch.
+        patch_width (int): width of each patch.
+        orig_height (int): height of original frame.
+        orig_width (int): width of original frame.
+    Returns:
+        video (Tensor): tensor of shape (BxDxHxWxCxT)
+    """
+    B, D, _, _, C, T_patchified = patchified_video.shape
+
+    height_patches = orig_height // patch_height
+    width_patches = orig_width // patch_width
+    T = T_patchified // (height_patches * width_patches)
+
+    video = patchified_video.reshape(
+        B, D, patch_height, patch_width, C, height_patches, width_patches, T
+    )
+    video = video.permute(0, 1, 2, 5, 3, 6, 4, 7)
+    video = video.reshape(B, D, orig_height, orig_width, C, T)
+    return video

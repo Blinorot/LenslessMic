@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 
-from src.lensless.utils import ungroup_frames
+from src.lensless.utils import ungroup_frames, unpatchify_video
 from src.transforms import MinMaxNormalize
 
 
@@ -13,6 +13,7 @@ def reconstruct_codec(
     roi_kwargs=None,
     corners_list=None,
     group_frames_kwargs=None,
+    patchify_video_kwargs=None,
     normalize_lensless=False,
 ):
     """
@@ -32,6 +33,8 @@ def reconstruct_codec(
         corners_list (None | list): list of coordinates for matching corners.
         group_frames_kwargs (dict | None): configuration for ungroup_frames function.
             See src.lensless.utils.ungroup_frames. Ignored if None.
+        patchify_video_kwargs (dict | None): configuration for unpatchify_video function.
+            See src.lensless.utils.unpatchify_video. Ignored if None.
         normalize_lensless (bool): whether to peak-normalize lensless video.
     Returns:
         recon_lensed_video (Tensor): reconstructed lensed codec video.
@@ -63,6 +66,9 @@ def reconstruct_codec(
         _, _, H, W = recon_codec_video.shape
         recon_codec_video = recon_codec_video.reshape(B, D, T, C, H, W)
         recon_codec_video = recon_codec_video.permute(0, 1, 4, 5, 3, 2)
+
+    if patchify_video_kwargs is not None:
+        recon_codec_video = unpatchify_video(recon_codec_video, **patchify_video_kwargs)
 
     if isinstance(min_vals, float):
         min_vals = [min_vals] * recon_codec_video.shape[-1]

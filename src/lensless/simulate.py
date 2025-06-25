@@ -2,7 +2,12 @@ import torch
 import torchvision.transforms.v2 as TV2
 
 from lensless.recon.rfft_convolve import RealFFTConvolve2D
-from src.lensless.utils import get_roi_indexes, group_frames, normalize_video
+from src.lensless.utils import (
+    get_roi_indexes,
+    group_frames,
+    normalize_video,
+    patchify_video,
+)
 from src.transforms import MinMaxNormalize
 
 
@@ -50,6 +55,7 @@ def simulate_lensless_codec(
     normalize=True,
     normalize_dims=(0, 4),
     group_frames_kwargs=None,
+    patchify_video_kwargs=None,
 ):
     """
     Simulate lensless codec video, given lensed codec video,
@@ -70,10 +76,14 @@ def simulate_lensless_codec(
             Use (0, 4) for batch and channel-wise normalization.
         group_frames_kwargs (dict | None): configuration for group_frames function.
             See src.lensless.utils.group_frames. Ignored if None.
+        patchify_video_kwargs (dict | None): configuration for patchify_video function.
+            See src.lensless.utils.patchify_video. Ignored if None.
     Returns:
         lensless_codec_video (Tensor): simulated lensless video.
         resized_codec_video (Tensor): resized (according to ROI) lensed video.
     """
+    if patchify_video_kwargs is not None:
+        codec_video = patchify_video(codec_video, **patchify_video_kwargs)
 
     B, D, H, W, C, T = codec_video.shape
 

@@ -26,6 +26,31 @@ def rgb2gray_np(rgb):
     return gray[..., None]
 
 
+def patchify_gray_video_np(video, patch_height, patch_width, **kwargs):
+    """
+    Split video frames into patches and consider each patch as a frame.
+
+    Args:
+        video (np.array): tensor of shape (TxHxW)
+        patch_height (int): height of each patch.
+        patch_width (int): width of each patch.
+    Returns:
+        patchified_video (np.array): patchified video of shape
+            (T_patchifiedxpatch_heightxpatch_width)
+    """
+    T, H, W = video.shape
+    assert H % patch_height == 0, "Frame height shall be divisible by patch height."
+    assert W % patch_width == 0, "Frame width shall be divisible by patch width."
+
+    patchified_video = video.reshape(
+        T, patch_height, H // patch_height, patch_width, W // patch_width
+    )
+    patchified_video = patchified_video.transpose(0, 2, 4, 1, 3)
+    patchified_video = patchified_video.reshape(-1, patch_height, patch_width)
+
+    return patchified_video
+
+
 def save_grayscale_video_ffv1(array: np.ndarray, path: str):
     """
     Save a grayscale uint8 video using FFV1 codec and MKV container.
