@@ -45,7 +45,7 @@ def patchify_gray_video_np(video, patch_height, patch_width, **kwargs):
     patchified_video = video.reshape(
         T, patch_height, H // patch_height, patch_width, W // patch_width
     )
-    patchified_video = patchified_video.transpose(0, 2, 4, 1, 3)
+    patchified_video = patchified_video.transpose(2, 4, 0, 1, 3)
     patchified_video = patchified_video.reshape(-1, patch_height, patch_width)
 
     return patchified_video

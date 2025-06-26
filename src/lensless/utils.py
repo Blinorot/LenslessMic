@@ -72,13 +72,13 @@ def fix_perspective(img, corners_list, roi_kwargs):
     ]
 
     B, D, H, W, C = img.shape
-    img = img.permute(0, 1, 4, 2, 3)
+    img = img.permute(0, 1, 4, 2, 3).contiguous()
     img = img.reshape(B * D, C, H, W)
     img = T.functional.perspective(
         img, startpoints=corners_list, endpoints=corners_output
     )
     img = img.reshape(B, D, C, H, W)
-    img = img.permute(0, 1, 3, 4, 2)
+    img = img.permute(0, 1, 3, 4, 2).contiguous()
     return img
 
 
@@ -235,7 +235,7 @@ def patchify_video(video, patch_height, patch_width, **kwargs):
     patchified_video = video.reshape(
         B, D, patch_height, H // patch_height, patch_width, W // patch_width, C, T
     )
-    patchified_video = patchified_video.permute(0, 1, 2, 4, 6, 3, 5, 7)
+    patchified_video = patchified_video.permute(0, 1, 2, 4, 6, 3, 5, 7).contiguous()
     patchified_video = patchified_video.reshape(B, D, patch_height, patch_width, C, -1)
 
     return patchified_video
@@ -267,6 +267,6 @@ def unpatchify_video(
     video = patchified_video.reshape(
         B, D, patch_height, patch_width, C, height_patches, width_patches, T
     )
-    video = video.permute(0, 1, 2, 5, 3, 6, 4, 7)
+    video = video.permute(0, 1, 2, 5, 3, 6, 4, 7).contiguous()
     video = video.reshape(B, D, orig_height, orig_width, C, T)
     return video

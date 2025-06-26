@@ -128,9 +128,9 @@ def simulate_lensless_codec(
         frame = codec_video[..., frame_index]
 
         # apply transform on H and W
-        frame = frame.permute(0, 1, 4, 2, 3)
+        frame = frame.permute(0, 1, 4, 2, 3).contiguous()
         frame = transform(frame)
-        frame = frame.permute(0, 1, 3, 4, 2)
+        frame = frame.permute(0, 1, 3, 4, 2).contiguous()
 
         transformed_lensed[..., frame_index] = frame
 

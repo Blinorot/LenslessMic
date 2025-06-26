@@ -148,7 +148,9 @@ class BaseDataset(Dataset):
         lensless_codec_video = lensless_codec_video.to(torch.float32)
         lensless_codec_video = lensless_codec_video / 255
 
-        lensless_codec_video = lensless_codec_video.permute(1, 2, 0)  # HxWxT
+        lensless_codec_video = lensless_codec_video.permute(
+            1, 2, 0
+        ).contiguous()  # HxWxT
         lensless_codec_video = lensless_codec_video.unsqueeze(0)  # add plane
         lensless_codec_video = lensless_codec_video.unsqueeze(-2)  # add channel
 

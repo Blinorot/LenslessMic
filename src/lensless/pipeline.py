@@ -58,14 +58,14 @@ def reconstruct_codec(
     if resize_coef > 1:
         # apply avg_pool on H and W
         B, D, H, W, C, T = recon_codec_video.shape
-        recon_codec_video = recon_codec_video.permute(0, 1, 5, 4, 2, 3)
+        recon_codec_video = recon_codec_video.permute(0, 1, 5, 4, 2, 3).contiguous()
         recon_codec_video = recon_codec_video.reshape(B * D * T, C, H, W)
         recon_codec_video = F.avg_pool2d(
             recon_codec_video, kernel_size=resize_coef, stride=resize_coef
         )
         _, _, H, W = recon_codec_video.shape
         recon_codec_video = recon_codec_video.reshape(B, D, T, C, H, W)
-        recon_codec_video = recon_codec_video.permute(0, 1, 4, 5, 3, 2)
+        recon_codec_video = recon_codec_video.permute(0, 1, 4, 5, 3, 2).contiguous()
 
     if patchify_video_kwargs is not None:
         recon_codec_video = unpatchify_video(recon_codec_video, **patchify_video_kwargs)
