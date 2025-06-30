@@ -5,10 +5,15 @@ from torch import nn
 
 
 class CodecEncoderDecoder(nn.Module):
-    def __init__(self, codec_cls, codec_weights_path, codec_kwargs=None):
+    def __init__(
+        self, codec_cls, codec_weights_path, codec_kwargs=None, codec_name="codec"
+    ):
         """
         Args:
             codec_cls (nn.Module): class
+            codec_weights_path (str): path to codec weights.pth
+            codec_kwargs (dict | None): kwargs for codec class.
+            codec_name (str): tag to identify codec.
         """
         super().__init__()
         checkpoint = torch.load(codec_weights_path, map_location="cpu")
@@ -32,6 +37,7 @@ class CodecEncoderDecoder(nn.Module):
         self.codec = codec_cls(**codec_kwargs["kwargs"])
         self.codec.load_state_dict(checkpoint["state_dict"])
         self.codec.metadata = codec_kwargs
+        self.codec_name = codec_name
 
     def forward(self, audio):
         return self.codec(audio)

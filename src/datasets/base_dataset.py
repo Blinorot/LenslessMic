@@ -38,7 +38,7 @@ class BaseDataset(Dataset):
         shuffle_index=False,
         instance_transforms=DEFAULT_TRANSFORM,
         lensless_tag=None,
-        codec=None,
+        codec_name=None,
         roi_kwargs=None,
         resize_coef=1,
         psf_path=None,
@@ -58,8 +58,8 @@ class BaseDataset(Dataset):
             instance_transforms (dict[Callable] | None): transforms that
                 should be applied on the instance. Depend on the
                 tensor name.
-            lensless_tag (str | None): tag for saved lensless codec img
-            codec (nn.Module | None): audio codec from src.transforms.
+            lensless_tag (str | None): tag for saved lensless codec img.
+            codec_name (str | None): audio codec.codec_name from src.transforms.
             roi_kwargs (dict | None): top_left, height, and width for ROI.
             resize_coef (int): the scaling factor for resize.
             psf_path (str | None): path to .npy array with saved PSF.
@@ -84,7 +84,7 @@ class BaseDataset(Dataset):
             self.psf = torch.from_numpy(np.load(psf_path))
 
         self.lensless_tag = lensless_tag
-        self.codec = codec
+        self.codec_name = codec_name
         self.roi_kwargs = roi_kwargs
         self.resize_coef = resize_coef
 
@@ -114,7 +114,7 @@ class BaseDataset(Dataset):
             "audio_path": audio_path,
         }
 
-        if self.lensless_tag is not None:
+        if self.lensless_tag is not None and self.codec_name is not None:
             lensless_dict = self.load_lensless(audio_path)
             instance_data.update(**lensless_dict)
 
@@ -130,12 +130,16 @@ class BaseDataset(Dataset):
 
     def load_lensless(self, audio_path):
         suffix = Path(audio_path).suffix
-        lensless_path = audio_path[: -(len(suffix))] + f"_{self.lensless_tag}.mkv"
+        lensless_path = (
+            audio_path[: -(len(suffix))] + f"_{self.lensless_tag}_{self.codec_name}.mkv"
+        )
         min_vals_path = (
-            audio_path[: -(len(suffix))] + f"_{self.lensless_tag}_min_vals.pth"
+            audio_path[: -(len(suffix))]
+            + f"_{self.lensless_tag}_min_vals_{self.codec_name}.pth"
         )
         max_vals_path = (
-            audio_path[: -(len(suffix))] + f"_{self.lensless_tag}_max_vals.pth"
+            audio_path[: -(len(suffix))]
+            + f"_{self.lensless_tag}_max_vals_{self.codec_name}.pth"
         )
 
         min_vals = torch.load(min_vals_path, map_location="cpu")
@@ -347,7 +351,9 @@ class BaseDataset(Dataset):
             # peak-normalization
             audio = audio / audio.abs().max()
 
-            codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
+            with torch.no_grad():
+                codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
+
             codec_video, min_vals_list, max_vals_list = normalize_video(
                 codec_video,
                 min_vals=min_vals,
@@ -363,9 +369,13 @@ class BaseDataset(Dataset):
             codec_video = (codec_video * 255).to(torch.uint8)
 
             suffix = Path(audio_path).suffix
-            video_path = audio_path[: -(len(suffix))] + "_codec.mkv"
-            min_vals_path = audio_path[: -(len(suffix))] + "_min_vals.pth"
-            max_vals_path = audio_path[: -(len(suffix))] + "_max_vals.pth"
+            video_path = audio_path[: -(len(suffix))] + f"_{codec.codec_name}.mkv"
+            min_vals_path = (
+                audio_path[: -(len(suffix))] + f"_min_vals_{codec.codec_name}.pth"
+            )
+            max_vals_path = (
+                audio_path[: -(len(suffix))] + f"_max_vals_{codec.codec_name}.pth"
+            )
 
             save_grayscale_video_ffv1(codec_video.clone().numpy(), str(video_path))
 
@@ -381,13 +391,12 @@ class BaseDataset(Dataset):
         resize_coef=1,
         normalize=True,
         normalize_dims=(0, 4),
+        group_frames_kwargs=None,
+        patchify_video_kwargs=None,
     ):
         """
         Simulate lensless codec video given PSF, codec,
         and alignment hyperparameters.
-
-        Uses given arguments instead of self.codec, etc.
-        to create new simulations.
 
         Args:
             lensless_tag (str): tag for saving lensless codec.
@@ -398,6 +407,10 @@ class BaseDataset(Dataset):
             normalize (bool): whether to rescale lensless output via peak-normalization.
             normalize_dims (int | tuple): dims for normalization. Use 0 for Batch-only.
                 Use (0, 4) for batch and channel-wise normalization.
+            group_frames_kwargs (dict | None): configuration for group_frames function.
+                See src.lensless.utils.group_frames. Ignored if None.
+            patchify_video_kwargs (dict | None): configuration for patchify_video function.
+                See src.lensless.utils.patchify_video. Ignored if None.
         """
         codec_sample_rate = codec.codec.metadata["kwargs"]["sample_rate"]
         assert self.target_sr == codec_sample_rate, "Sample rate mismatch."
@@ -408,7 +421,8 @@ class BaseDataset(Dataset):
             audio_path = elem["audio_path"]
             audio = self.load_audio(audio_path)
 
-            codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
+            with torch.no_grad():
+                codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
 
             lensless_codec_video, _, min_vals, max_vals = simulate_lensless_codec(
                 codec_video,
@@ -418,6 +432,8 @@ class BaseDataset(Dataset):
                 return_min_max_values=True,
                 normalize=normalize,
                 normalize_dims=normalize_dims,
+                group_frames_kwargs=group_frames_kwargs,
+                patchify_video_kwargs=patchify_video_kwargs,
             )
 
             lensless_codec_video = lensless_codec_video.squeeze()  # (H, W, T)
@@ -427,12 +443,16 @@ class BaseDataset(Dataset):
             lensless_codec_video = (lensless_codec_video * 255).to(torch.uint8)
 
             suffix = Path(audio_path).suffix
-            lensless_path = audio_path[: -(len(suffix))] + f"_{lensless_tag}.mkv"
+            lensless_path = (
+                audio_path[: -(len(suffix))] + f"_{lensless_tag}_{codec.codec_name}.mkv"
+            )
             min_vals_path = (
-                audio_path[: -(len(suffix))] + f"_{lensless_tag}_min_vals.pth"
+                audio_path[: -(len(suffix))]
+                + f"_{lensless_tag}_min_vals_{codec.codec_name}.pth"
             )
             max_vals_path = (
-                audio_path[: -(len(suffix))] + f"_{lensless_tag}_max_vals.pth"
+                audio_path[: -(len(suffix))]
+                + f"_{lensless_tag}_max_vals_{codec.codec_name}.pth"
             )
 
             save_grayscale_video_ffv1(
