@@ -2,6 +2,7 @@
 
 input_dir: /mnt/mirflickr/all
 input_file_ext: mkv
+input_filter_key: "" # codec_32x32_120
 
 # can pass existing folder to continue measurement
 output_dir: null

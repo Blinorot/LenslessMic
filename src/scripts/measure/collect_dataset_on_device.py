@@ -126,7 +126,8 @@ def collect_dataset(config):
 
     # get number of files with glob
     # files = list(plib.Path(input_dir).glob(f"*.{config.input_file_ext}"))
-    files = glob.glob(os.path.join(input_dir, f"*.{config.input_file_ext}"))
+    search_key = f"*{config.input_filter_key}.{config.input_file_ext}"
+    files = glob.glob(os.path.join(input_dir, search_key))
     files = natural_sort(files)
     files = [plib.Path(f) for f in files]
     n_files = len(files)
