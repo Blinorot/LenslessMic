@@ -5,6 +5,7 @@ Used to avoid import errors on the Raspberry Pi that cannot install torch.
 import shutil
 import subprocess
 
+import cv2
 import numpy as np
 
 
@@ -176,3 +177,112 @@ def load_grayscale_video_ffv1(path: str) -> np.ndarray:
         np.frombuffer(raw, dtype=np.uint8).copy().reshape((num_frames, height, width))
     )
     return array
+
+
+def format_img(
+    img_og,
+    pad,
+    vshift,
+    brightness,
+    screen_res,
+    hshift,
+    rot90,
+    landscape,
+    image_res,
+):
+    interpolation = cv2.INTER_NEAREST
+
+    # load image
+    if img_og.ndim == 3 and img_og.shape[2] == 3:
+        img_og = cv2.cvtColor(img_og, cv2.COLOR_BGR2RGB)
+    if landscape:
+        if img_og.shape[0] > img_og.shape[1]:
+            img_og = np.rot90(img_og)
+
+    # rotate image
+    if rot90:
+        img_og = np.rot90(img_og, k=rot90)
+
+        # if odd, swap hshift and vshift
+        if rot90 % 2:
+            vshift, hshift = hshift, vshift
+
+    if screen_res:
+        image_height, image_width = img_og.shape[:2]
+        img = np.zeros((screen_res[1], screen_res[0], 3), dtype=img_og.dtype)
+        if img_og.ndim == 2:
+            img = img[..., 0]
+
+        if image_res is None:
+            # set image with padding and correct aspect ratio
+            if screen_res[0] < screen_res[1]:
+                max_ratio = screen_res[1] / float(image_height)
+
+                new_width = int(screen_res[0] / (1 + 2 * pad / 100))
+                ratio = new_width / float(image_width)
+                # new_height = int(ratio * image_height)
+
+            else:
+                max_ratio = screen_res[0] / float(image_width)
+
+                new_height = int(screen_res[1] / (1 + 2 * pad / 100))
+                ratio = new_height / float(image_height)
+                # new_width = int(ratio * image_width)
+
+            ratio = min(ratio, max_ratio)
+            new_width = int(ratio * image_width)
+            new_height = int(ratio * image_height)
+            image_res = (new_width, new_height)
+
+        # if negative value in image res
+        elif image_res[0] < 0 or image_res[1] < 0:
+            assert (
+                image_res[0] > 0 or image_res[1] > 0
+            ), "Both dimensions cannot be negative."
+            # rescale according to non-negative value
+            if image_res[0] < 0:
+                new_height = image_res[1]
+                ratio = new_height / float(image_height)
+                image_res = (int(ratio * image_width), new_height)
+
+            elif image_res[1] < 0:
+                new_width = image_res[0]
+                ratio = new_width / float(image_width)
+                image_res = (new_width, int(ratio * image_height))
+
+        # set image within screen
+        img_og = cv2.resize(img_og, image_res, interpolation=interpolation)
+        img[: image_res[1], : image_res[0]] = img_og
+
+        # center
+        img = np.roll(img, shift=int((screen_res[1] - image_res[1]) / 2), axis=0)
+        img = np.roll(img, shift=int((screen_res[0] - image_res[0]) / 2), axis=1)
+
+    else:
+        # pad image
+        if pad:
+            padding_amount = np.array(img_og.shape[:2]) * pad / 100
+            pad_width = (
+                (int(padding_amount[0] // 2), int(padding_amount[0] // 2)),
+                (int(padding_amount[1] // 2), int(padding_amount[1] // 2)),
+                (0, 0),
+            )
+            img = np.pad(img_og, pad_width=pad_width[: img.ndim])
+        else:
+            img = img_og
+
+    if vshift:
+        nx = img.shape[0]
+        img = np.roll(img, shift=int(vshift * nx / 100), axis=0)
+
+    if hshift:
+        ny = img.shape[1]
+        img = np.roll(img, shift=int(hshift * ny / 100), axis=1)
+
+    if brightness:
+        img = (img * brightness / 100).astype(np.uint8)
+
+    if img.dim == 2:
+        img = np.stack([img] * 3, axis=-1)
+
+    return img
