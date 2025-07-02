@@ -246,6 +246,7 @@ def collect_dataset(config):
                     )
                 video_len = video.shape[0]
                 vid_desc = "Single video capture"
+                pre_desc = "Single video preprocessing"
                 video_frames_paths = []
 
                 # formatting args
@@ -262,7 +263,7 @@ def collect_dataset(config):
                 rot90 = config.display.rot90
 
                 # pre-save to avoid extra delays
-                for frame_ind in range(video_len):
+                for frame_ind in tqdm.tqdm(range(video_len), desc=pre_desc):
                     frame = video[frame_ind]  # H x W
                     if image_res is None:
                         image_res = (frame.shape[0], frame.shape[1])
