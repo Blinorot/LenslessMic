@@ -282,7 +282,9 @@ def format_img(
     if brightness:
         img = (img * brightness / 100).astype(np.uint8)
 
-    if img.dim == 2:
+    if img.ndim == 2:
+        # pygame requires 3 channels
+        # convert to black and white
         img = np.stack([img] * 3, axis=-1)
 
     return img
