@@ -39,6 +39,8 @@ class CodecEncoderDecoder(nn.Module):
         self.codec.metadata = codec_kwargs
         self.codec_name = codec_name
 
+        self.codec.eval()  # switch to eval mode by default
+
     def forward(self, audio):
         return self.codec(audio)
 
