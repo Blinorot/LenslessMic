@@ -207,7 +207,7 @@ def format_img(
         if rot90 % 2:
             vshift, hshift = hshift, vshift
 
-    if screen_res:
+    if screen_res is not None:
         image_height, image_width = img_og.shape[:2]
         img = np.zeros((screen_res[1], screen_res[0], 3), dtype=img_og.dtype)
         if img_og.ndim == 2:
