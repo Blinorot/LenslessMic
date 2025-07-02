@@ -277,7 +277,8 @@ def collect_dataset(config):
                         landscape=landscape,
                         image_res=image_res,
                     )  # pre-process
-                    tmp = Image.fromarray(frame, mode="L")
+                    # formatted images are always RGB
+                    tmp = Image.fromarray(frame, mode="RGB")
                     with tempfile.NamedTemporaryFile(
                         suffix=".png", delete=False
                     ) as tmp_file:
