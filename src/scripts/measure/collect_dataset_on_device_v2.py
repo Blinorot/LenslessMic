@@ -291,7 +291,8 @@ def collect_dataset(config):
                 output_video_list = []
                 for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
                     tmp_path = video_frames_paths[frame_ind]
-                    frame = cv2.imread(tmp_path, cv2.IMREAD_GRAYSCALE)
+                    frame = cv2.imread(tmp_path, cv2.IMREAD_UNCHANGED)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     # display img
                     display_img(frame, screen, config)
                     os.remove(tmp_path)

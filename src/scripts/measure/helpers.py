@@ -193,8 +193,8 @@ def format_img(
     interpolation = cv2.INTER_NEAREST
 
     # load image
-    if img_og.ndim == 3 and img_og.shape[2] == 3:
-        img_og = cv2.cvtColor(img_og, cv2.COLOR_BGR2RGB)
+    # if img_og.ndim == 3 and img_og.shape[2] == 3:
+    #     img_og = cv2.cvtColor(img_og, cv2.COLOR_BGR2RGB)
     if landscape:
         if img_og.shape[0] > img_og.shape[1]:
             img_og = np.rot90(img_og)
