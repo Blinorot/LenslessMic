@@ -282,12 +282,10 @@ def collect_dataset(config):
                     )  # pre-process
                     # formatted images are always RGB
                     tmp = Image.fromarray(frame, mode="RGB")
-                    with tempfile.NamedTemporaryFile(
-                        suffix=".png", delete=False
-                    ) as tmp_file:
-                        tmp.save(tmp_file)
-                        tmp_path = tmp_file.name
-                        video_frames_paths.append(tmp_path)
+                    fd, tmp_path = tempfile.mkstemp(suffix=".png")
+                    os.close(fd)  # close the low-level file descriptor
+                    tmp.save(tmp_path)
+                    video_frames_paths.append(tmp_path)
                 output_video_list = []
                 for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
                     tmp_path = video_frames_paths[frame_ind]
