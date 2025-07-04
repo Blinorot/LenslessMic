@@ -124,6 +124,8 @@ def collect_dataset(config):
     screen_res = np.array(config.display.screen_res)  # (width, height)
     # pygame requires W first, then H
     screen = pygame.display.set_mode((screen_res[0], screen_res[1]), pygame.FULLSCREEN)
+    # hide cursor
+    pygame.mouse.set_visible(False)
 
     if config.runtime:
         # convert to minutes
