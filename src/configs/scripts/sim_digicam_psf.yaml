@@ -1,0 +1,46 @@
+# python scripts/sim/digicam_psf.py
+hydra:
+  job:
+    chdir: True    # change to output folder
+
+use_torch: False
+dtype: float32
+torch_device: cuda:0
+requires_grad: False
+
+# if repo not provided, check for local file at `digicam.pattern`
+huggingface_repo: null
+huggingface_mask_pattern: mask_pattern.npy
+huggingface_psf: psf_measured.png
+
+digicam:
+
+  slm: adafruit
+  sensor: rpi_hq
+  downsample: 1
+
+  # https://drive.switch.ch/index.php/s/NdgHlcDeHVDH5ww?path=%2Fpsf
+  pattern: data/capture/digicam_psf_june16/adafruit_random_pattern_20250616_151951.npy
+  ap_center: [55, 77]
+  ap_shape: [18, 24]
+  rotate: -0.8   # rotation in degrees
+  vertical_shift: -20 # [px]
+  horizontal_shift: -20  # [px]
+
+  # optionally provide measured PSF for side-by-side comparison
+  # https://drive.switch.ch/index.php/s/NdgHlcDeHVDH5ww?path=%2Fpsf
+  psf: data/capture/digicam_psf_june16/raw_data_rgb.png
+  gamma: 2    # for plotting measured
+
+sim:
+
+  # whether SLM is flipped
+  flipud: True
+
+  # in practice found waveprop=True or False doesn't make difference
+  waveprop: True
+  deadspace: True
+
+  # below are ignored if waveprop=False
+  scene2mask: 0.3   # [m]
+  mask2sensor: 0.004   # [m]
