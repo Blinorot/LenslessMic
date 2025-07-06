@@ -8,6 +8,7 @@ import wget
 from tqdm import tqdm
 
 from src.datasets.base_dataset import BaseDataset
+from src.datasets.data_utils import normalize_text
 from src.utils.io_utils import ROOT_PATH
 
 URL_LINKS = {
@@ -70,6 +71,10 @@ class LibrispeechDataset(BaseDataset):
         if not split_dir.exists():
             self._load_part(part)
 
+        # new dir for audio files
+        new_audio_dir = split_dir / "audio"
+        new_audio_dir.mkdir(exist_ok=True, parents=True)
+
         flac_dirs = set()
         for dirpath, dirnames, filenames in os.walk(str(split_dir)):
             if any([f.endswith(".flac") for f in filenames]):
@@ -87,17 +92,25 @@ class LibrispeechDataset(BaseDataset):
                     t_info = torchaudio.info(str(flac_path))
                     length = t_info.num_frames / t_info.sample_rate
 
-                    new_flac_path = split_dir / flac_path.name
+                    new_flac_path = new_audio_dir / flac_path.name
                     shutil.move(str(flac_path), str(new_flac_path))
+
+                    f_text = normalize_text(f_text)
+                    new_txt_path = new_audio_dir / flac_path.with_suffix(".txt").name
+                    with new_txt_path.open("w", encoding="utf-8") as text_file:
+                        text_file.write(f_text)
+
                     index.append(
                         {
                             "audio_path": str(new_flac_path),
-                            "text": f_text.lower(),
+                            "text": f_text,
                             "audio_len": length,
                         }
                     )
 
         for p in split_dir.iterdir():
+            if str(p) == str(new_audio_dir):
+                continue
             if p.is_dir():
                 shutil.rmtree(p)
 

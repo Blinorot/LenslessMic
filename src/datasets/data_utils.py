@@ -1,3 +1,4 @@
+import re
 import shutil
 import subprocess
 from itertools import repeat
@@ -216,3 +217,9 @@ def get_dataloaders(config, device):
         dataloaders[dataset_partition] = partition_dataloader
 
     return dataloaders, batch_transforms
+
+
+def normalize_text(text: str):
+    text = text.lower()
+    text = re.sub(r"[^a-z ]", "", text)
+    return text

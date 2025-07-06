@@ -6,7 +6,13 @@ from torch import nn
 
 class CodecEncoderDecoder(nn.Module):
     def __init__(
-        self, codec_cls, codec_weights_path, codec_kwargs=None, codec_name="codec"
+        self,
+        codec_cls,
+        codec_weights_path,
+        codec_kwargs=None,
+        codec_name="codec",
+        eval_mode=True,
+        freeze_weights=True,
     ):
         """
         Args:
@@ -14,6 +20,8 @@ class CodecEncoderDecoder(nn.Module):
             codec_weights_path (str): path to codec weights.pth
             codec_kwargs (dict | None): kwargs for codec class.
             codec_name (str): tag to identify codec.
+            eval_mode (bool): whether to switch to eval mode.
+            freeze_weights (bool): whether to freeze weights.
         """
         super().__init__()
         checkpoint = torch.load(codec_weights_path, map_location="cpu")
@@ -39,7 +47,15 @@ class CodecEncoderDecoder(nn.Module):
         self.codec.metadata = codec_kwargs
         self.codec_name = codec_name
 
-        self.codec.eval()  # switch to eval mode by default
+        if freeze_weights:
+            self.change_requires_grad(requires_grad=False)
+
+        if eval_mode:
+            self.codec.eval()  # switch to eval mode by default
+
+    def change_requires_grad(self, requires_grad):
+        for param in self.codec.parameters():
+            param.requires_grad = requires_grad
 
     def forward(self, audio):
         return self.codec(audio)

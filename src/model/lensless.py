@@ -3,6 +3,8 @@ from torch import nn
 
 import lensless
 from lensless.recon.model_dict import download_model, load_model
+from lensless.utils.image import rgb2gray
+from lensless.utils.io import load_psf
 from src.lensless.utils import fix_perspective, get_roi_indexes
 
 
@@ -15,6 +17,9 @@ class LenslessWrapper(nn.Module):
         loader_kwargs=None,
         use_batch_video_version=False,
         freeze_weights=False,
+        psf_path=None,
+        psf_loader_kwargs=None,
+        grayscale_psf=False,
     ):
         """
         Args:
@@ -27,8 +32,19 @@ class LenslessWrapper(nn.Module):
                 for video reconstruction. Set to True if VRAM is big.
             freeze_weights (bool): whether to freeze weights and avoid
                 gradient calculation.
+            psf_path (str | None): load psf for initialization if psf
+                is not provided in recon_kwargs.
+            psf_loader_kwargs (dict | None): kwargs for loading psf.
+            grayscale_psf (bool): whether to convert psf to grayscale.
         """
         super().__init__()
+
+        if psf_path is not None:
+            psf = load_psf(psf_path, **psf_loader_kwargs)
+            if grayscale_psf:
+                psf = rgb2gray(psf)
+            psf = torch.from_numpy(psf)
+            recon_kwargs["psf"] = psf
 
         if use_loader:
             model_path = download_model(**loader_kwargs)
@@ -117,3 +133,48 @@ class LenslessWrapper(nn.Module):
             recon_lensed_video.append(recon_lensed)
         recon_lensed_video = torch.cat(recon_lensed_video, dim=-1)
         return recon_lensed_video
+
+    def __str__(self):
+        """
+        Model prints with the number of parameters.
+        """
+        if not isinstance(self.recon, nn.Module):
+            return self.recon.__class__.__name__
+
+        all_parameters = sum([p.numel() for p in self.recon.parameters()])
+        trainable_parameters = sum(
+            [p.numel() for p in self.recon.parameters() if p.requires_grad]
+        )
+
+        result_info = str(self.recon)
+        result_info = result_info + f"\nAll parameters: {all_parameters}"
+
+        if hasattr(self.recon, "psf_network_model"):
+            psf_network_parameters = sum(
+                [p.numel() for p in self.recon.psf_network_model.parameters()]
+            )
+            result_info = (
+                result_info + f"\nPSF Network parameters: {psf_network_parameters}"
+            )
+
+        if hasattr(self.recon, "pre_process_model"):
+            pre_process_parameters = sum(
+                [p.numel() for p in self.recon.pre_process_model.parameters()]
+            )
+            result_info = (
+                result_info
+                + f"\nPre Process Network parameters: {pre_process_parameters}"
+            )
+
+        if hasattr(self.recon, "post_process_model"):
+            post_process_parameters = sum(
+                [p.numel() for p in self.recon.post_process_model.parameters()]
+            )
+            result_info = (
+                result_info
+                + f"\nPost Process Network parameters: {post_process_parameters}"
+            )
+
+        result_info = result_info + f"\nTrainable parameters: {trainable_parameters}"
+
+        return result_info
