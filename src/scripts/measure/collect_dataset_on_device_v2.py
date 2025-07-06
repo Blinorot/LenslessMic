@@ -30,6 +30,7 @@ import pygame
 import tqdm
 from hydra.utils import to_absolute_path
 from joblib import Parallel, delayed
+from numba import njit, prange
 from picamerax import PiCamera
 from PIL import Image
 
@@ -248,7 +249,7 @@ def collect_dataset(config):
     # loop over files with tqdm
     exposure_vals = []
     brightness_vals = []
-    n_tries_vals = []
+    # n_tries_vals = []
 
     # shutter_speed = init_shutter_speed
     data_desc = "Dataset capture"
@@ -273,6 +274,7 @@ def collect_dataset(config):
                 video_len = video.shape[0]
                 vid_desc = "Single video capture"
                 pre_desc = "Single video preprocessing"
+                post_desc = "Single video postprocessing"
                 video_frames_paths = []
 
                 # formatting args
@@ -331,7 +333,7 @@ def collect_dataset(config):
                 # concat frames into video and save
                 output_video_list = Parallel(n_jobs=config.n_jobs)(
                     delayed(post_process_frame)(frame_path, down, g)
-                    for frame_path in output_frame_path_list
+                    for frame_path in tqdm.tqdm(output_frame_path_list, desc=post_desc)
                 )
                 output_video = np.stack(output_video_list, axis=0)
                 save_grayscale_video_ffv1(output_video, str(output_fp))
@@ -351,10 +353,10 @@ def collect_dataset(config):
     # print brightness and exposure range and average
     print(f"brightness range: {np.min(brightness_vals)} - {np.max(brightness_vals)}")
     print(f"exposure range: {np.min(exposure_vals)} - {np.max(exposure_vals)}")
-    print(f"n_tries range: {np.min(n_tries_vals)} - {np.max(n_tries_vals)}")
+    # print(f"n_tries range: {np.min(n_tries_vals)} - {np.max(n_tries_vals)}")
     print(f"brightness average: {np.mean(brightness_vals)}")
     print(f"exposure average: {np.mean(exposure_vals)}")
-    print(f"n_tries average: {np.mean(n_tries_vals)}")
+    # print(f"n_tries average: {np.mean(n_tries_vals)}")
 
 
 def capture_screen(
@@ -390,7 +392,8 @@ def capture_screen(
         # get bayer data
         stream = picamerax.array.PiBayerArray(camera)
         camera.capture(stream, "jpeg", bayer=True)
-        output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
+        # output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
+        output_bayer = fast_sum_axis_3(stream.array)
 
         exposure_vals.append(current_shutter_speed / 1e6)
         brightness_vals.append(current_screen_brightness)
@@ -427,6 +430,16 @@ def post_process_frame(frame_path, down, g):
     output = output[0, 0, :, :, 0]  # H x W
 
     return output
+
+
+@njit(parallel=True)
+def fast_sum_axis_3(arr):
+    h, w, _ = arr.shape
+    out = np.empty((h, w), dtype=np.uint16)
+    for i in prange(h):
+        for j in range(w):
+            out[i, j] = arr[i, j, 0] + arr[i, j, 1] + arr[i, j, 2]
+    return out
 
 
 if __name__ == "__main__":
