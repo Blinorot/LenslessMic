@@ -16,6 +16,9 @@ start_idx: 0
 runtime: null   # in hours
 start_delay: null   # how much time (in minutes) to wait before starting
 
+# multi_processing
+n_jobs: 1
+
 # measurement parameters
 dummy: False    # simply copy file to output folder for testing
 

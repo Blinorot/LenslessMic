@@ -29,6 +29,7 @@ import picamerax.array
 import pygame
 import tqdm
 from hydra.utils import to_absolute_path
+from joblib import Parallel, delayed
 from picamerax import PiCamera
 from PIL import Image
 
@@ -59,6 +60,30 @@ def alphanum_key(key):
 
 def natural_sort(arr):
     return sorted(arr, key=alphanum_key)
+
+
+def pre_process_frame(
+    frame, pad, vshift, init_brightness, screen_res, hshift, rot90, landscape, image_res
+):
+    if image_res is None:
+        image_res = (frame.shape[0], frame.shape[1])
+    frame = format_img(
+        frame,
+        pad=pad,
+        vshift=vshift,
+        brightness=init_brightness,
+        screen_res=screen_res,
+        hshift=hshift,
+        rot90=rot90,
+        landscape=landscape,
+        image_res=image_res,
+    )  # pre-process
+    # formatted images are always RGB
+    tmp = Image.fromarray(frame, mode="RGB")
+    fd, tmp_path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)  # close the low-level file descriptor
+    tmp.save(tmp_path)
+    return tmp_path
 
 
 @hydra.main(
@@ -265,12 +290,9 @@ def collect_dataset(config):
                 rot90 = config.display.rot90
 
                 # pre-save to avoid extra delays
-                for frame_ind in tqdm.tqdm(range(video_len), desc=pre_desc):
-                    frame = video[frame_ind]  # H x W
-                    if image_res is None:
-                        image_res = (frame.shape[0], frame.shape[1])
-                    frame = format_img(
-                        frame,
+                video_frames_paths = Parallel(n_jobs=config.n_jobs)(
+                    delayed(pre_process_frame)(
+                        video[frame_ind],
                         pad=pad,
                         vshift=vshift,
                         brightness=init_brightness,
@@ -279,13 +301,10 @@ def collect_dataset(config):
                         rot90=rot90,
                         landscape=landscape,
                         image_res=image_res,
-                    )  # pre-process
-                    # formatted images are always RGB
-                    tmp = Image.fromarray(frame, mode="RGB")
-                    fd, tmp_path = tempfile.mkstemp(suffix=".png")
-                    os.close(fd)  # close the low-level file descriptor
-                    tmp.save(tmp_path)
-                    video_frames_paths.append(tmp_path)
+                    )
+                    for frame_ind in tqdm.tqdm(range(video_len), desc=pre_desc)
+                )
+
                 output_video_list = []
                 for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
                     tmp_path = video_frames_paths[frame_ind]
