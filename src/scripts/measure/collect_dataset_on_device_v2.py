@@ -79,10 +79,9 @@ def pre_process_frame(
         image_res=image_res,
     )  # pre-process
     # formatted images are always RGB
-    tmp = Image.fromarray(frame, mode="RGB")
-    fd, tmp_path = tempfile.mkstemp(suffix=".png")
+    fd, tmp_path = tempfile.mkstemp(suffix=".npy")
     os.close(fd)  # close the low-level file descriptor
-    tmp.save(tmp_path)
+    np.save(tmp_path, frame)
     return tmp_path
 
 
@@ -98,9 +97,9 @@ def collect_dataset(config):
         # create in same directory as input with timestamp
         output_dir = input_dir + "_measured_" + time.strftime("%Y%m%d-%H%M%S")
 
-    MAX_TRIES = config.max_tries
-    MIN_LEVEL = config.min_level
-    MAX_LEVEL = config.max_level
+    # MAX_TRIES = config.max_tries
+    # MIN_LEVEL = config.min_level
+    # MAX_LEVEL = config.max_level
 
     # if output dir exists check how many files done
     print(f"Output directory : {output_dir}")
@@ -251,7 +250,7 @@ def collect_dataset(config):
     brightness_vals = []
     n_tries_vals = []
 
-    shutter_speed = init_shutter_speed
+    # shutter_speed = init_shutter_speed
     data_desc = "Dataset capture"
     for i, _file in enumerate(tqdm.tqdm(files[start_idx:], desc=data_desc)):
         # save file in output directory as MKV
@@ -305,38 +304,35 @@ def collect_dataset(config):
                     for frame_ind in tqdm.tqdm(range(video_len), desc=pre_desc)
                 )
 
-                output_video_list = []
+                output_frame_path_list = []
                 for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
                     tmp_path = video_frames_paths[frame_ind]
-                    frame = cv2.imread(tmp_path, cv2.IMREAD_UNCHANGED)
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frame = np.load(tmp_path)
                     # display img
                     display_img(frame, screen, config)
                     os.remove(tmp_path)
                     # capture img
-                    output, _, _, camera = capture_screen(
-                        MAX_LEVEL,
-                        MAX_TRIES,
-                        MIN_LEVEL,
-                        _file,
-                        brightness_vals,
-                        camera,
-                        config,
-                        down,
-                        exposure_vals,
-                        g,
-                        i,
-                        init_brightness,
-                        shutter_speed,
-                        None,
-                        n_tries_vals,
-                        output_fp,
-                        start_idx,
+                    output_bayer, _, _, camera = capture_screen(
+                        brightness_vals=brightness_vals,
+                        camera=camera,
+                        config=config,
+                        exposure_vals=exposure_vals,
+                        i=i,
+                        init_brightness=init_brightness,
+                        mask_dir=None,
+                        start_dir=start_idx,
                     )
 
-                    output_video_list.append(output)
+                    fd, tmp_path = tempfile.mkstemp(suffix=".npy")
+                    os.close(fd)  # close the low-level file descriptor
+                    np.save(tmp_path, output_bayer)
+                    output_frame_path_list.append(tmp_path)
 
                 # concat frames into video and save
+                output_video_list = Parallel(n_jobs=config.n_jobs)(
+                    delayed(post_process_frame)(frame_path, down, g)
+                    for frame_path in output_frame_path_list
+                )
                 output_video = np.stack(output_video_list, axis=0)
                 save_grayscale_video_ffv1(output_video, str(output_fp))
 
@@ -362,22 +358,13 @@ def collect_dataset(config):
 
 
 def capture_screen(
-    MAX_LEVEL,
-    MAX_TRIES,
-    MIN_LEVEL,
-    _file,
     brightness_vals,
     camera,
     config,
-    down,
     exposure_vals,
-    g,
     i,
     init_brightness,
-    init_shutter_speed,
     mask_dir,
-    n_tries_vals,
-    output_fp,
     start_idx,
 ):
     if not config.capture.skip:
@@ -394,96 +381,20 @@ def capture_screen(
             set_programmable_mask(full_pattern, device=config.masks.device)
 
         # -- take picture
-        max_pixel_val = 0
-        fact_increase = config.capture.fact_increase
-        fact_decrease = config.capture.fact_decrease
-        n_tries = 0
-
-        if MAX_TRIES > 0:
-            # shutter speed is constant for MAX_TRIES == 0
-            camera.shutter_speed = int(init_shutter_speed)
-            time.sleep(config.capture.config_pause)
         current_shutter_speed = camera.shutter_speed
 
         current_screen_brightness = init_brightness
         print(f"current shutter speed: {current_shutter_speed}")
         print(f"current screen brightness: {current_screen_brightness}")
 
-        while max_pixel_val < MIN_LEVEL or max_pixel_val > MAX_LEVEL:
-            # get bayer data
-            stream = picamerax.array.PiBayerArray(camera)
-            camera.capture(stream, "jpeg", bayer=True)
-            output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
-
-            # convert to RGB
-            output = bayer2rgb_cc(
-                output_bayer,
-                down=down,
-                nbits=12,
-                blue_gain=float(g[1]),
-                red_gain=float(g[0]),
-                black_level=RPI_HQ_CAMERA_BLACK_LEVEL,
-                ccm=RPI_HQ_CAMERA_CCM_MATRIX,
-                nbits_out=8,
-            )
-
-            # if down:
-            #     output = resize(
-            #         output[None, ...], factor=1 / down, interpolation=cv2.INTER_CUBIC
-            #     )[0]
-
-            # save image
-            # ignore for video
-            # save_image(output, output_fp, normalize=False)
-
-            # print range
-            print(f"{output_fp}, range: {output.min()} - {output.max()}")
-
-            # get max in RGB
-            max_pixel_val = output.max()
-
-            # convert to grayscale
-            output = output[None, None, ...]  # B x D x H x W x C
-            output = output.astype(np.float32) / 255  # to float
-            output = rgb2gray_np(output)  # B x D x H x W x 1
-            output = (output * 255).astype(np.uint8)  # to uint8
-            output = output[0, 0, :, :, 0]  # H x W
-
-            n_tries += 1
-            if n_tries > MAX_TRIES:
-                if MAX_TRIES != 0:
-                    print("Max number of tries reached!")
-                break
-
-            if max_pixel_val < MIN_LEVEL:
-                # increase exposure
-                current_shutter_speed = int(current_shutter_speed * fact_increase)
-                camera.shutter_speed = current_shutter_speed
-                time.sleep(config.capture.config_pause)
-
-                print(
-                    f"increasing shutter speed to [desired] {current_shutter_speed} [actual] {camera.shutter_speed}"
-                )
-
-            elif max_pixel_val > MAX_LEVEL:
-                if current_shutter_speed > 13098:  # TODO: minimum for RPi HQ
-                    # decrease exposure
-                    current_shutter_speed = int(current_shutter_speed / fact_decrease)
-                    camera.shutter_speed = current_shutter_speed
-                    time.sleep(config.capture.config_pause)
-                    print(
-                        f"decreasing shutter speed to [desired] {current_shutter_speed} [actual] {camera.shutter_speed}"
-                    )
-
-                else:
-                    # decrease screen brightness
-                    current_screen_brightness = current_screen_brightness - 10
-                    display_img(_file, config, current_screen_brightness)
+        # get bayer data
+        stream = picamerax.array.PiBayerArray(camera)
+        camera.capture(stream, "jpeg", bayer=True)
+        output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
 
         exposure_vals.append(current_shutter_speed / 1e6)
         brightness_vals.append(current_screen_brightness)
-        n_tries_vals.append(n_tries)
-    return output, current_shutter_speed, current_screen_brightness, camera
+    return output_bayer, current_shutter_speed, current_screen_brightness, camera
 
 
 def display_img(frame, screen, config):
@@ -492,6 +403,30 @@ def display_img(frame, screen, config):
     screen.blit(surface, (0, 0))
     pygame.display.flip()
     time.sleep(config.display.delay)
+
+
+def post_process_frame(frame_path, down, g):
+    frame = np.load(frame_path)
+    # convert to RGB
+    output = bayer2rgb_cc(
+        frame,
+        down=down,
+        nbits=12,
+        blue_gain=float(g[1]),
+        red_gain=float(g[0]),
+        black_level=RPI_HQ_CAMERA_BLACK_LEVEL,
+        ccm=RPI_HQ_CAMERA_CCM_MATRIX,
+        nbits_out=8,
+    )
+
+    # convert to grayscale
+    output = output[None, None, ...]  # B x D x H x W x C
+    output = output.astype(np.float32) / 255  # to float
+    output = rgb2gray_np(output)  # B x D x H x W x 1
+    output = (output * 255).astype(np.uint8)  # to uint8
+    output = output[0, 0, :, :, 0]  # H x W
+
+    return output
 
 
 if __name__ == "__main__":
