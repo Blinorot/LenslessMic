@@ -320,7 +320,7 @@ def collect_dataset(config):
                         i=i,
                         init_brightness=init_brightness,
                         mask_dir=None,
-                        start_dir=start_idx,
+                        start_idx=start_idx,
                     )
 
                     fd, tmp_path = tempfile.mkstemp(suffix=".npy")
