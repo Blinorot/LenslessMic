@@ -30,7 +30,6 @@ import pygame
 import tqdm
 from hydra.utils import to_absolute_path
 from joblib import Parallel, delayed
-from numba import njit, prange
 from picamerax import PiCamera
 from PIL import Image
 
@@ -392,8 +391,8 @@ def capture_screen(
         # get bayer data
         stream = picamerax.array.PiBayerArray(camera)
         camera.capture(stream, "jpeg", bayer=True)
-        # output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
-        output_bayer = fast_sum_axis_3(stream.array)
+        output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
+        # output_bayer = fast_sum_axis_3(stream.array)
 
         exposure_vals.append(current_shutter_speed / 1e6)
         brightness_vals.append(current_screen_brightness)
@@ -430,16 +429,6 @@ def post_process_frame(frame_path, down, g):
     output = output[0, 0, :, :, 0]  # H x W
 
     return output
-
-
-@njit(parallel=True)
-def fast_sum_axis_3(arr):
-    h, w, _ = arr.shape
-    out = np.empty((h, w), dtype=np.uint16)
-    for i in prange(h):
-        for j in range(w):
-            out[i, j] = arr[i, j, 0] + arr[i, j, 1] + arr[i, j, 2]
-    return out
 
 
 if __name__ == "__main__":
