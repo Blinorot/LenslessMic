@@ -428,6 +428,8 @@ def post_process_frame(frame_path, down, g):
     output = (output * 255).astype(np.uint8)  # to uint8
     output = output[0, 0, :, :, 0]  # H x W
 
+    os.remove(frame_path)
+
     return output
 
 
