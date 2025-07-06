@@ -63,7 +63,7 @@ def natural_sort(arr):
 
 
 def pre_process_frame(
-    frame, pad, vshift, init_brightness, screen_res, hshift, rot90, landscape, image_res
+    frame, pad, vshift, brightness, screen_res, hshift, rot90, landscape, image_res
 ):
     if image_res is None:
         image_res = (frame.shape[0], frame.shape[1])
@@ -71,7 +71,7 @@ def pre_process_frame(
         frame,
         pad=pad,
         vshift=vshift,
-        brightness=init_brightness,
+        brightness=brightness,
         screen_res=screen_res,
         hshift=hshift,
         rot90=rot90,
