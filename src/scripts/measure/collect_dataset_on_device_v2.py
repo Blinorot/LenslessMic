@@ -328,7 +328,7 @@ def collect_dataset(config):
                         init_brightness=init_brightness,
                         mask_dir=None,
                         start_idx=start_idx,
-                        finelame=output_fp,
+                        filename=output_fp,
                         rgb_mode=config.capture.rgb_mode,
                     )
 
