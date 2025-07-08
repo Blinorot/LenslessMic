@@ -404,7 +404,8 @@ def capture_screen(
         print(f"current screen brightness: {current_screen_brightness}")
 
         if rgb_mode:
-            output = np.array(camera.resolution, dtype=np.uint8)
+            res = camera.resolution
+            output = np.empty((res[1], res[0], 3), dtype=np.uint8)
             camera.capture(output, "rgb")
             convert_frame_to_grayscale(output)
         else:
