@@ -407,7 +407,7 @@ def capture_screen(
             stream = picamerax.array.PiRGBArray(camera)
             camera.capture(stream, format="rgb")
             output = stream.array.copy()
-            convert_frame_to_grayscale(output)
+            output = convert_frame_to_grayscale(output)
         else:
             # get bayer data
             stream = picamerax.array.PiBayerArray(camera)
