@@ -328,6 +328,7 @@ def collect_dataset(config):
                         init_brightness=init_brightness,
                         mask_dir=None,
                         start_idx=start_idx,
+                        finelame=output_fp,
                         rgb_mode=config.capture.rgb_mode,
                     )
 
@@ -381,6 +382,7 @@ def capture_screen(
     init_brightness,
     mask_dir,
     start_idx,
+    filename,
     rgb_mode=False,
 ):
     if not config.capture.skip:
@@ -400,6 +402,7 @@ def capture_screen(
         current_shutter_speed = camera.shutter_speed
 
         current_screen_brightness = init_brightness
+        print(f"File: {filename}")
         print(f"current shutter speed: {current_shutter_speed}")
         print(f"current screen brightness: {current_screen_brightness}")
 
