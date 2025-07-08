@@ -58,6 +58,7 @@ capture:
   # awb_gains: null
   fact_increase: 2   # multiplicative factor to increase exposure
   fact_decrease: 1.5
+  rgb_mode: False # capture rgb directly if True
 
 # video processing
 video:

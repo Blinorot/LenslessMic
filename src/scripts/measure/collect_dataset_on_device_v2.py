@@ -237,6 +237,11 @@ def collect_dataset(config):
         camera.awb_mode = "off"
         camera.awb_gains = g
 
+        # Avoid any image effects
+        camera.image_effect = "none"
+        camera.contrast = 0
+        camera.sharpness = 0
+
         # for parameters to settle
         time.sleep(config.capture.config_pause)
 
@@ -306,6 +311,7 @@ def collect_dataset(config):
                 )
 
                 output_frame_path_list = []
+                output_video_list = []
                 for frame_ind in tqdm.tqdm(range(video_len), desc=vid_desc):
                     tmp_path = video_frames_paths[frame_ind]
                     frame = np.load(tmp_path)
@@ -313,7 +319,7 @@ def collect_dataset(config):
                     display_img(frame, screen, config)
                     os.remove(tmp_path)
                     # capture img
-                    output_bayer, _, _, camera = capture_screen(
+                    output, _, _, camera = capture_screen(
                         brightness_vals=brightness_vals,
                         camera=camera,
                         config=config,
@@ -322,18 +328,26 @@ def collect_dataset(config):
                         init_brightness=init_brightness,
                         mask_dir=None,
                         start_idx=start_idx,
+                        rgb_mode=config.capture.rgb_mode,
                     )
 
-                    fd, tmp_path = tempfile.mkstemp(suffix=".npy")
-                    os.close(fd)  # close the low-level file descriptor
-                    np.save(tmp_path, output_bayer)
-                    output_frame_path_list.append(tmp_path)
+                    if config.capture.rgb_mode:
+                        output_video_list.append(output)
+                    else:
+                        fd, tmp_path = tempfile.mkstemp(suffix=".npy")
+                        os.close(fd)  # close the low-level file descriptor
+                        np.save(tmp_path, output)
+                        output_frame_path_list.append(tmp_path)
 
-                # concat frames into video and save
-                output_video_list = Parallel(n_jobs=config.n_jobs)(
-                    delayed(post_process_frame)(frame_path, down, g)
-                    for frame_path in tqdm.tqdm(output_frame_path_list, desc=post_desc)
-                )
+                if not config.capture.rgb_mode:
+                    # concat frames into video and save
+                    output_video_list = Parallel(n_jobs=config.n_jobs)(
+                        delayed(post_process_frame)(frame_path, down, g)
+                        for frame_path in tqdm.tqdm(
+                            output_frame_path_list, desc=post_desc
+                        )
+                    )
+
                 output_video = np.stack(output_video_list, axis=0)
                 save_grayscale_video_ffv1(output_video, str(output_fp))
 
@@ -367,6 +381,7 @@ def capture_screen(
     init_brightness,
     mask_dir,
     start_idx,
+    rgb_mode=False,
 ):
     if not config.capture.skip:
         # -- set mask pattern
@@ -388,15 +403,19 @@ def capture_screen(
         print(f"current shutter speed: {current_shutter_speed}")
         print(f"current screen brightness: {current_screen_brightness}")
 
-        # get bayer data
-        stream = picamerax.array.PiBayerArray(camera)
-        camera.capture(stream, "jpeg", bayer=True)
-        output_bayer = np.sum(stream.array, axis=2).astype(np.uint16)
-        # output_bayer = fast_sum_axis_3(stream.array)
+        if rgb_mode:
+            output = np.array(camera.resolution, dtype=np.uint8)
+            camera.capture(output, "rgb")
+            convert_frame_to_grayscale(output)
+        else:
+            # get bayer data
+            stream = picamerax.array.PiBayerArray(camera)
+            camera.capture(stream, "jpeg", bayer=True)
+            output = np.sum(stream.array, axis=2).astype(np.uint16)
 
         exposure_vals.append(current_shutter_speed / 1e6)
         brightness_vals.append(current_screen_brightness)
-    return output_bayer, current_shutter_speed, current_screen_brightness, camera
+    return output, current_shutter_speed, current_screen_brightness, camera
 
 
 def display_img(frame, screen, config):
@@ -422,15 +441,20 @@ def post_process_frame(frame_path, down, g):
     )
 
     # convert to grayscale
-    output = output[None, None, ...]  # B x D x H x W x C
-    output = output.astype(np.float32) / 255  # to float
-    output = rgb2gray_np(output)  # B x D x H x W x 1
-    output = (output * 255).astype(np.uint8)  # to uint8
-    output = output[0, 0, :, :, 0]  # H x W
+    output = convert_frame_to_grayscale(output)
 
     os.remove(frame_path)
 
     return output
+
+
+def convert_frame_to_grayscale(frame):
+    frame = frame[None, None, ...]  # B x D x H x W x C
+    frame = frame.astype(np.float32) / 255  # to float
+    frame = rgb2gray_np(frame)  # B x D x H x W x 1
+    frame = (frame * 255).astype(np.uint8)  # to uint8
+    frame = frame[0, 0, :, :, 0]  # H x W
+    return frame
 
 
 if __name__ == "__main__":
