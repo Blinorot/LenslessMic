@@ -239,7 +239,7 @@ def collect_dataset(config):
         # Set ISO to the desired value
         # iso = base_iso * DigitalGain * AnalogueGain
         # base_iso = 100
-        controls["DigitalGain"] = 1
+        # controls["DigitalGain"] = 1
         controls["AnalogueGain"] = config.capture.iso / 100
         # Wait for the automatic gain control to settle
         # Now fix the values
