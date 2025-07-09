@@ -222,6 +222,7 @@ def collect_dataset(config):
         camera.configure(still_conf)
         print(f"Camera resolution: {res}, down resolution: {down_res}")
         # Wait for the automatic gain control to settle
+        camera.start()
         time.sleep(config.capture.config_pause)
 
         camera_defaults = camera.capture_metadata()
@@ -265,8 +266,6 @@ def collect_dataset(config):
 
         camera.set_controls(controls)
         # for parameters to settle
-        time.sleep(config.capture.config_pause)
-        camera.start()
         time.sleep(config.capture.config_pause)
 
         print("Capturing at resolution: ", res)
