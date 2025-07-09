@@ -178,13 +178,18 @@ def collect_dataset(config):
         # https://picamerax.readthedocs.io/en/latest/fov.html?highlight=camera%20resolution#sensor-modes
         # -- just get max resolution of camera
         camera = PiCamera(framerate=30)
+
+        down_res = np.array(camera.MAX_RESOLUTION)
+        if down is not None:
+            down_res = (np.array(res) / down).astype(int)
+
         if res:
             assert len(res) == 2
         else:
-            res = np.array(camera.MAX_RESOLUTION)
-            if down is not None:
-                res = (np.array(res) / down).astype(int)
+            res = down_res
         camera.close()
+
+        resize_captured = tuple(res) == tuple(down_res)
 
         # -- now set up camera with desired settings
         max_increase = (
@@ -207,6 +212,7 @@ def collect_dataset(config):
             framerate = config.capture.framerate
 
         camera = PiCamera(sensor_mode=0, resolution=tuple(res), framerate=framerate)
+        print(f"Camera resolution: {res}, down resolution: {down_res}")
 
         # Set ISO to the desired value
         camera.resolution = tuple(res)
@@ -330,6 +336,8 @@ def collect_dataset(config):
                         start_idx=start_idx,
                         filename=output_fp,
                         rgb_mode=config.capture.rgb_mode,
+                        down_res=down_res,
+                        resize_captured=resize_captured,
                     )
 
                     if config.capture.rgb_mode:
@@ -384,6 +392,8 @@ def capture_screen(
     start_idx,
     filename,
     rgb_mode=False,
+    down_res=[507, 380],
+    resize_captured=True,
 ):
     if not config.capture.skip:
         # -- set mask pattern
@@ -410,6 +420,8 @@ def capture_screen(
             stream = picamerax.array.PiRGBArray(camera)
             camera.capture(stream, format="rgb")
             output = stream.array.copy()
+            if resize_captured:
+                output = cv2.resize(output, (down_res[1], down_res[0]))
             output = convert_frame_to_grayscale(output)
         else:
             # get bayer data
