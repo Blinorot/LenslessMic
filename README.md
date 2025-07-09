@@ -128,10 +128,24 @@ Raspberry Pi installation:
    ```
 
 2. Install extra packages:
+
    ```bash
    pip install git+https://github.com/LCAV/LenslessPiCam.git
    pip install git+https://github.com/pvigier/perlin-numpy.git@5e26837db14042e51166eb6cad4c0df2c1907016
    pip install git+https://github.com/ebezzam/slm-controller.git
+
+   sudo apt install python3-picamera2
+   # add simlinks to your env
+   ln -s /usr/lib/python3/dist-packages/picamera2 ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/picamera2
+   ln -s /usr/lib/python3/dist-packages/picamera2-0.3.12.egg-info ROOT_DIR/ROOT_DIRLenslessMic/env/lib/python3.9/site-packages/
+   ln -s /usr/lib/python3/dist-packages/libcamera ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/libcamera
+   ln -s /usr/lib/python3/dist-packages/v4l2.py ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/v4l2.py
+   ln -s /usr/lib/python3/dist-packages/prctl.py ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/prctl.py
+   ln -s /usr/lib/python3/dist-packages/_prctl.cpython-39-arm-linux-gnueabihf.so ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/
+   ln -s /usr/lib/python3/dist-packages/piexif ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/piexif
+   ln -s /usr/lib/python3/dist-packages/pidng ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/pidng
+   ln -s /usr/lib/python3/dist-packages/simplejpeg ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/simplejpeg
+   ln -s /usr/lib/python3/dist-packages/pykms ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/pykms
    ```
 
 ## How To Use
