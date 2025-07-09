@@ -375,6 +375,7 @@ def collect_dataset(config):
                     )
 
                 output_video = np.stack(output_video_list, axis=0)
+                print(f"Max vals: {output_video.max(axis=(1, 2))}")
                 save_grayscale_video_ffv1(output_video, str(output_fp))
 
         # check if runtime is exceeded
