@@ -421,7 +421,9 @@ def capture_screen(
             camera.capture(stream, format="rgb")
             output = stream.array.copy()
             if resize_captured:
-                output = cv2.resize(output, (down_res[1], down_res[0]))
+                # down_res is wxh
+                # cv2 expects wxh
+                output = cv2.resize(output, (down_res[0], down_res[1]))
             output = convert_frame_to_grayscale(output)
         else:
             # get bayer data
