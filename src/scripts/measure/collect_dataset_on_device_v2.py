@@ -181,7 +181,7 @@ def collect_dataset(config):
 
         down_res = np.array(camera.MAX_RESOLUTION)
         if down is not None:
-            down_res = (np.array(res) / down).astype(int)
+            down_res = (np.array(down_res) / down).astype(int)
 
         if res:
             assert len(res) == 2
