@@ -189,7 +189,7 @@ def collect_dataset(config):
             res = down_res
         camera.close()
 
-        resize_captured = tuple(res) == tuple(down_res)
+        resize_captured = tuple(res) != tuple(down_res)
 
         # -- now set up camera with desired settings
         max_increase = (
