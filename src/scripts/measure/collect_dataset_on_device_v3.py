@@ -178,6 +178,16 @@ def collect_dataset(config):
         # -- just get max resolution of camera
         camera = Picamera2()
 
+        all_modes = camera.sensor_modes
+        max_mode = -1
+        max_size = all_modes[0]["size"][0]
+        for i, mode in enumerate(all_modes):
+            if mode["bit_depth"] == 12 and mode["size"][0] >= max_size:
+                max_size = mode["size"][0]
+                max_mode = i
+        assert max_mode >= 0, "Could not find correct mode"
+        camera.set_camera_mode(all_modes[max_mode])
+
         down_res = np.array(camera.sensor_resolution)
         if down is not None:
             down_res = (np.array(down_res) / down).astype(int)
@@ -211,8 +221,9 @@ def collect_dataset(config):
             framerate = config.capture.framerate
 
         camera = Picamera2()
+        camera.set_camera_mode(all_modes[max_mode])
         rgb_conf = {"size": tuple(res), "format": "RGB888"}
-        dummy_rgb_conf = {"size": (2, 2), "format": "YUV420"}
+        dummy_rgb_conf = {"size": (64, 64), "format": "YUV420"}
         bayer_conf = {"format": "SRGGB12"}
         still_conf = camera.create_still_configuration(
             main=rgb_conf if config.capture.rgb_mode else dummy_rgb_conf,
