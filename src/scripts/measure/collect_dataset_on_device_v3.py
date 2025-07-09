@@ -212,9 +212,10 @@ def collect_dataset(config):
 
         camera = Picamera2()
         rgb_conf = {"size": tuple(res), "format": "RGB888"}
+        dummy_rgb_conf = {"size": (2, 2), "format": "YUV420"}
         bayer_conf = {"format": "SRGGB12"}
         still_conf = camera.create_still_configuration(
-            main=rgb_conf if config.capture.rgb_mode else None,
+            main=rgb_conf if config.capture.rgb_mode else dummy_rgb_conf,
             buffer_count=1,
             raw=None if config.capture.rgb_mode else bayer_conf,
         )
