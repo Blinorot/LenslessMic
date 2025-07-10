@@ -134,7 +134,8 @@ Raspberry Pi installation:
    pip install git+https://github.com/pvigier/perlin-numpy.git@5e26837db14042e51166eb6cad4c0df2c1907016
    pip install git+https://github.com/ebezzam/slm-controller.git
 
-   sudo apt install python3-picamera2
+   sudo apt install --reinstall libcamera0 python3-libcamera python3-picamera2
+   sudo apt install --reinstall libcamera0 libcamera-apps
    # add simlinks to your env
    ln -s /usr/lib/python3/dist-packages/picamera2 ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/picamera2
    ln -s /usr/lib/python3/dist-packages/picamera2-0.3.12.egg-info ROOT_DIR/ROOT_DIRLenslessMic/env/lib/python3.9/site-packages/
