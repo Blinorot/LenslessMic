@@ -177,8 +177,9 @@ def collect_dataset(config):
         # https://picamerax.readthedocs.io/en/latest/fov.html?highlight=camera%20resolution#sensor-modes
         # -- just get max resolution of camera
         camera = Picamera2()
+        sensor_res = camera.sensor_resolution
 
-        down_res = np.array(camera.sensor_resolution)
+        down_res = np.array(sensor_res)
         if down is not None:
             down_res = (np.array(down_res) / down).astype(int)
 
@@ -213,14 +214,16 @@ def collect_dataset(config):
         camera = Picamera2()
         rgb_conf = {"size": tuple(res), "format": "RGB888"}
         dummy_rgb_conf = {"size": (64, 64), "format": "YUV420"}
-        bayer_conf = {"format": "SRGGB12", "size": tuple(camera.sensor_resolution)}
+        bayer_conf = {"format": "SRGGB12", "size": tuple(sensor_res)}
         still_conf = camera.create_still_configuration(
             main=rgb_conf if config.capture.rgb_mode else dummy_rgb_conf,
             buffer_count=1,
             raw=None if config.capture.rgb_mode else bayer_conf,
         )
         camera.configure(still_conf)
-        print(f"Camera resolution: {res}, down resolution: {down_res}")
+        print(
+            f"Sensor resolution: {sensor_res}, Camera resolution: {res}, down resolution: {down_res}"
+        )
         # Wait for the automatic gain control to settle
         camera.start()
         time.sleep(config.capture.config_pause)
@@ -444,7 +447,7 @@ def capture_screen(
         else:
             # get bayer data
             raw_data = camera.capture_array("raw")
-            output = raw_data.astype(np.uint16)
+            output = raw_data.view(np.uint16)
 
         exposure_vals.append(current_shutter_speed / 1e6)
         brightness_vals.append(current_screen_brightness)

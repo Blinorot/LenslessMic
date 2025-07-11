@@ -147,6 +147,7 @@ Raspberry Pi installation:
    ln -s /usr/lib/python3/dist-packages/pidng ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/pidng
    ln -s /usr/lib/python3/dist-packages/simplejpeg ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/simplejpeg
    ln -s /usr/lib/python3/dist-packages/pykms ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/pykms
+   sudo ldconfig
    ```
 
 ## How To Use
