@@ -358,6 +358,7 @@ def collect_dataset(config):
                         rgb_mode=config.capture.rgb_mode,
                         down_res=down_res,
                         resize_captured=resize_captured,
+                        bayer_res=bayer_conf["size"],
                     )
 
                     if config.capture.rgb_mode:
@@ -415,6 +416,7 @@ def capture_screen(
     rgb_mode=False,
     down_res=[507, 380],
     resize_captured=True,
+    bayer_res=[4056, 3040],
 ):
     if not config.capture.skip:
         # -- set mask pattern
@@ -448,6 +450,7 @@ def capture_screen(
             # get bayer data
             raw_data = camera.capture_array("raw")
             output = raw_data.view(np.uint16)
+            output = output[:, : bayer_res[0]]  # remove padding
 
         exposure_vals.append(current_shutter_speed / 1e6)
         brightness_vals.append(current_screen_brightness)
