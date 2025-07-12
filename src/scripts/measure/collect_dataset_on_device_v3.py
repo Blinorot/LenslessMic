@@ -217,7 +217,8 @@ def collect_dataset(config):
         bayer_conf = {"format": "SRGGB12", "size": tuple(sensor_res)}
         still_conf = camera.create_still_configuration(
             main=rgb_conf if config.capture.rgb_mode else dummy_rgb_conf,
-            buffer_count=1,
+            buffer_count=config.capture.buffer_count,
+            queue=config.capture.queue,
             raw=None if config.capture.rgb_mode else bayer_conf,
         )
         camera.configure(still_conf)
@@ -234,6 +235,7 @@ def collect_dataset(config):
             "AwbEnable": False,
             "Contrast": 0.0,
             "Sharpness": 0.0,
+            "NoiseReductionMode": 0,
         }
         # framerate
         frame_duration_us = int(1000000 / framerate)
