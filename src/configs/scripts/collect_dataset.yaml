@@ -12,6 +12,10 @@ output_file_ext: mkv
 n_files: 15
 start_idx: 0
 
+# shuffle files order
+shuffle_files: False
+shuffle_seed: 0
+
 # timing
 runtime: null   # in hours
 start_delay: null   # how much time (in minutes) to wait before starting

@@ -12,9 +12,9 @@ To test on local machine, set dummy=True (which will just copy the files over).
 
 """
 import glob
-import json
 import os
 import pathlib as plib
+import random
 import re
 import shutil
 import tempfile
@@ -92,6 +92,7 @@ def pre_process_frame(
 def collect_dataset(config):
     input_dir = config.input_dir
     output_dir = config.output_dir
+    mask_dir = None
     if output_dir is None:
         # create in same directory as input with timestamp
         output_dir = input_dir + "_measured_" + time.strftime("%Y%m%d-%H%M%S")
@@ -118,13 +119,15 @@ def collect_dataset(config):
         if config.masks is not None:
             # make masks for measurements
             mask_dir = plib.Path(output_dir) / "masks"
-            mask_dir.mkdir(exist_ok=True)
 
-            np.random.seed(config.masks.seed)
-            for i in range(config.masks.n):
-                mask_fp = mask_dir / f"mask_{i}.npy"
-                mask_vals = np.random.uniform(0, 1, config.masks.shape)
-                np.save(mask_fp, mask_vals)
+            if not mask_dir.exists():
+                mask_dir.mkdir(exist_ok=True)
+
+                np.random.seed(config.masks.seed)
+                for i in range(config.masks.n):
+                    mask_fp = mask_dir / f"mask_{i}.npy"
+                    mask_vals = np.random.uniform(0, 1, config.masks.shape)
+                    np.save(mask_fp, mask_vals)
 
     # assert input directory exists
     assert os.path.exists(input_dir)
@@ -134,6 +137,11 @@ def collect_dataset(config):
     search_key = f"*{config.input_filter_key}.{config.input_file_ext}"
     files = glob.glob(os.path.join(input_dir, search_key))
     files = natural_sort(files)
+
+    if config.shuffle_files:
+        random.seed(config.shuffle_seed)
+        random.shuffle(files)
+
     files = [plib.Path(f) for f in files]
     n_files = len(files)
     print(f"\nNumber of {config.input_file_ext} files :", n_files)
@@ -354,13 +362,14 @@ def collect_dataset(config):
                         exposure_vals=exposure_vals,
                         i=i,
                         init_brightness=init_brightness,
-                        mask_dir=None,
+                        mask_dir=mask_dir,
                         start_idx=start_idx,
                         filename=output_fp,
                         rgb_mode=config.capture.rgb_mode,
                         down_res=down_res,
                         resize_captured=resize_captured,
                         bayer_res=bayer_conf["size"],
+                        first_frame=(frame_ind == 0),
                     )
 
                     if config.capture.rgb_mode:
@@ -419,11 +428,18 @@ def capture_screen(
     down_res=[507, 380],
     resize_captured=True,
     bayer_res=[4056, 3040],
+    first_frame=True,
 ):
     if not config.capture.skip:
         # -- set mask pattern
-        if config.masks is not None:
+        if mask_dir is not None and first_frame:
             mask_idx = (i + start_idx) % config.masks.n
+
+            # set label for the video
+            mask_label = filename.with_suffix(".txt")
+            with mask_label.open("w", encoding="utf-8") as text_file:
+                text_file.write(str(mask_idx))
+
             mask_fp = mask_dir / f"mask_{mask_idx}.npy"
             print("using mask: ", mask_fp)
             mask_vals = np.load(mask_fp)
@@ -432,6 +448,8 @@ def capture_screen(
                 center=config.masks.center,
             )
             set_programmable_mask(full_pattern, device=config.masks.device)
+            # give time to set the mask
+            time.sleep(config.capture.config_pause)
 
         # -- take picture
         current_shutter_speed = camera.capture_metadata()["ExposureTime"]

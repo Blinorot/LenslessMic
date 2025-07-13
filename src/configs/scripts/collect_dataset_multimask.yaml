@@ -1,0 +1,30 @@
+defaults:
+  - collect_dataset
+  - _self_
+
+max_tries: 0
+
+shuffle_files: True
+shuffle_seed: 123
+
+display:
+  rot90: 1
+  image_res: [928, 928]
+  vshift: -23
+  brightness: 100
+  delay: 0.017
+
+capture:
+  exposure: 0.65
+  framerate: null
+  awb_gains: [1.8, 1.3]
+  buffer_count: 2
+  iso: 250
+  down: 8
+
+masks:
+  seed: 123
+  device: adafruit
+  n: 100    # number of masks
+  shape: [18, 24]
+  center: [55, 77]

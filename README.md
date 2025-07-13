@@ -194,10 +194,10 @@ python3 upload_dataset.py --local-dir "PATH_TO_ROOT/data/datasets/librispeech/te
 Download/Copy your dataset on the Raspberry Pi to an SSD. For example, call it `PATH_TO_RPI_SSD/datasets/librispeech`. Also create a new `tmp_dir` on your SSD. Then, run the following script:
 
 ```bash
-DISPLAY=:0 TMPDIR=PATH_TO_RPI_SSD/tmp_dir python -m src.scripts.measure.collect_dataset_on_device_v3 input_dir=PATH_TO_RPI_SSD/datasets/librispeech/16x16_130_16khz/lensed display.rot90=1 'display.image_res=[928, 928]' display.vshift=-23 max_tries=0 capture.exposure=0.65 capture.framerate=null capture.awb_gains="[1.8,1.3]" display.brightness=100 display.delay=0.017 capture.buffer_count=2 capture.iso=250
+DISPLAY=:0 TMPDIR=PATH_TO_RPI_SSD/tmp_dir python -m src.scripts.measure.collect_dataset_on_device_v3 -cn=collect_dataset_multimask input_dir=PATH_TO_RPI_SSD/datasets/librispeech/16x16_130_16khz/lensed output_dir=PATH_TO_RPI_SSD/datasets/librispeech/16x16_130_16khz/lenseless_measurement
 ```
 
-Rename the directory with lensless measurements and upload collected dataset on HF directly from your RPi.
+Upload collected dataset on HF directly from your RPi.
 
 ```bash
 cd scripts
