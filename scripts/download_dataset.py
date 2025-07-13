@@ -27,6 +27,7 @@ def download_folder(repo_id, remote_folder, local_root):
         repo_id=repo_id,
         repo_type="dataset",
         allow_patterns=[f"{remote_folder}*"] if remote_folder != "" else None,
+        resume_download=True,
     )
 
     files = list_repo_files(repo_id=repo_id, repo_type="dataset")
