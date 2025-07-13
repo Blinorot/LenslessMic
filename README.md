@@ -50,17 +50,6 @@ To start working with a template, just click on the `use this template` button.
 
 You can choose any of the branches as a starting point. [Set your choice as the default branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch) in the repository settings. You can also [delete unnecessary branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
 
-## Examples
-
-> [!IMPORTANT]
-> The main branch leaves some of the code parts empty or fills them with dummy examples, showing just the base structure. The final users can add code required for their own tasks.
-
-You can find examples of this template completed for different tasks in other branches:
-
-- [Image classification](https://github.com/Blinorot/pytorch_project_template/tree/example/image-classification): simple classification problem on [MNIST](https://yann.lecun.com/exdb/mnist/) and [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) datasets.
-
-- [ASR](https://github.com/Blinorot/pytorch_project_template/tree/example/asr): template for the automatic speech recognition (ASR) task. Some of the parts (for example, `collate_fn` and beam search for `text_encoder`) are missing for studying purposes of [HSE DLA course](https://github.com/markovka17/dla).
-
 ## Installation
 
 Installation may depend on your task. The general steps are the following:
@@ -149,6 +138,74 @@ Raspberry Pi installation:
    ln -s /usr/lib/python3/dist-packages/pykms ROOT_DIR/LenslessMic/env/lib/python3.9/site-packages/pykms
    sudo ldconfig
    ```
+
+## Pre-trained checkpoints
+
+To download pre-trained [Descript Audio Codec (DAC)](https://arxiv.org/abs/2306.06546), use the following command.
+
+```bash
+cd scripts
+python3 download_dac.py --remote-path ""
+```
+
+Add `--download_original` to download original DAC weights. You can download only a specific version of DAC by indicating the path from the [HF repo](https://huggingface.co/Blinorot/dac_finetuned_librispeech), like this:
+
+```bash
+cd scripts
+python3 download_dac.py --remote-path "16x16_130_16khz/latest/dac/weights.pth"
+```
+
+The weights will be saved to `data/dac_exps/`
+
+> [!NOTE]
+> The configs for [custom DAC](https://huggingface.co/Blinorot/dac_finetuned_librispeech), fine-tuned on [Librispeech](https://www.openslr.org/12) is located [here](https://github.com/Blinorot/descript-audio-codec).
+
+To download pre-trained LenslessMic models use the following command: TBA.
+
+## Dataset
+
+To download ready-to-use dataset, use the following command:
+
+```bash
+cd scripts
+python3 download_dataset.py --remote-path "TBA"
+```
+
+### Dataset collection
+
+To collect data, you need to download DAC weights first via commands written in [Pre-trained checkpoints](#pre-trained-checkpoints) section.
+
+Then, you need to run the following script to save your audio in video format:
+
+```bash
+python3 -m src.scripts.processing.convert_dataset dataset.part="test-clean" codec.codec_name="16x16_130_16khz"
+```
+
+Then, upload it to HF:
+
+```bash
+# upload audio
+python3 upload_dataset.py --local-dir "PATH_TO_ROOT/data/datasets/librispeech/test-clean/audio" --remote-dir "test-clean/audio" --ignore-unused-audio --ignore-reference-dir "PATH_TO_ROOT/data/datasets/librispeech/test-clean/16x16_130_16khz/lensed/"
+
+# upload video
+python3 upload_dataset.py --local-dir "PATH_TO_ROOT/data/datasets/librispeech/test-clean/16x16_130_16khz/lensed" --remote-dir "test-clean/16x16_130_16khz/lensed"
+```
+
+Download/Copy your dataset on the Raspberry Pi to an SSD. For example, call it `PATH_TO_RPI_SSD/datasets/librispeech`. Also create a new `tmp_dir` on your SSD. Then, run the following script:
+
+```bash
+DISPLAY=:0 TMPDIR=PATH_TO_RPI_SSD/tmp_dir python -m src.scripts.measure.collect_dataset_on_device_v3 input_dir=PATH_TO_RPI_SSD/datasets/librispeech/16x16_130_16khz/lensed display.rot90=1 'display.image_res=[928, 928]' display.vshift=-23 max_tries=0 capture.exposure=0.65 capture.framerate=null capture.awb_gains="[1.8,1.3]" display.brightness=100 display.delay=0.017 capture.buffer_count=2 capture.iso=250
+```
+
+Rename the directory with lensless measurements and upload collected dataset on HF directly from your RPi.
+
+```bash
+cd scripts
+python3 upload_dataset.py --local-dir "PATH_TO_PI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lenseless_measurement" --remote-dir "test-clean/16x16_130_16khz/lenseless_measurement"
+```
+
+> [!IMPORTANT]
+> Do not forget to change `username`, `repo-id`, and `paths` to the ones you need. See `scripts` arguments for more details.
 
 ## How To Use
 

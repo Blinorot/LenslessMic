@@ -1,3 +1,4 @@
+import importlib
 import logging
 import os
 import random
@@ -12,6 +13,21 @@ from omegaconf import OmegaConf
 
 from src.logger.logger import setup_logging
 from src.utils.io_utils import ROOT_PATH
+
+
+def resolve_class(class_path):
+    """
+    Resolver for Hydra. Converts string representation
+    of class_path to the actual class.
+
+    Args:
+        class_path (str): class path (e.g. "dac.DAC").
+    Returns:
+        class: the class itself (e.g. dac.DAC).
+    """
+    module_path, class_name = class_path.rsplit(".", 1)
+    module = importlib.import_module(module_path)
+    return getattr(module, class_name)
 
 
 def set_worker_seed(worker_id):

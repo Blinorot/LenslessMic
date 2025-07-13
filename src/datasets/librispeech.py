@@ -73,6 +73,30 @@ class LibrispeechDataset(BaseDataset):
 
         # new dir for audio files
         new_audio_dir = split_dir / "audio"
+
+        if new_audio_dir.exists():
+            # librispeech was already processed
+            for file in tqdm(
+                os.listdir(str(new_audio_dir)),
+                desc=f"Preparing librispeech folders: {part}",
+            ):
+                if file.endswith(".flac"):
+                    new_flac_path = new_audio_dir / file
+                    new_txt_path = new_flac_path.with_suffix(".txt")
+                    f_text = new_txt_path.read_text()
+                    t_info = torchaudio.info(str(new_flac_path))
+                    length = t_info.num_frames / t_info.sample_rate
+
+                    index.append(
+                        {
+                            "audio_path": str(new_flac_path),
+                            "text": f_text,
+                            "audio_len": length,
+                        }
+                    )
+
+            return index
+
         new_audio_dir.mkdir(exist_ok=True, parents=True)
 
         flac_dirs = set()

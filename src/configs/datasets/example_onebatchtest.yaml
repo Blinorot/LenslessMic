@@ -9,6 +9,7 @@ train:
     width: 256
   codec_name: "codec_16x16_128"
   lensless_tag: "measured" # lensless dir name is f"lensless_{lensless_tag}"
+  instance_transforms: ${transforms.instance_transforms.train}
 test:
   _target_: src.datasets.CustomDirDataset
   limit: 1
@@ -20,3 +21,4 @@ test:
     width: 256
   codec_name: "codec_16x16_128"
   lensless_tag: "measured"
+  instance_transforms: ${transforms.instance_transforms.inference}

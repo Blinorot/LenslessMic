@@ -3,12 +3,15 @@ import inspect
 import torch
 from torch import nn
 
+from src.utils.io_utils import ROOT_PATH
+
 
 class CodecEncoderDecoder(nn.Module):
     def __init__(
         self,
         codec_cls,
         codec_weights_path,
+        codec_add_root_path=False,
         codec_kwargs=None,
         codec_name="codec",
         eval_mode=True,
@@ -16,14 +19,20 @@ class CodecEncoderDecoder(nn.Module):
     ):
         """
         Args:
-            codec_cls (nn.Module): class
-            codec_weights_path (str): path to codec weights.pth
+            codec_cls (nn.Module): class.
+            codec_weights_path (str): path to codec weights.pth.
+            codec_add_root_path (bool): if True, add ROOT_PATH
+                before codec_weights_path.
             codec_kwargs (dict | None): kwargs for codec class.
             codec_name (str): tag to identify codec.
             eval_mode (bool): whether to switch to eval mode.
             freeze_weights (bool): whether to freeze weights.
         """
         super().__init__()
+
+        if codec_add_root_path:
+            codec_weights_path = ROOT_PATH / codec_weights_path
+
         checkpoint = torch.load(codec_weights_path, map_location="cpu")
 
         if codec_kwargs is None and "metadata" in checkpoint.keys():
