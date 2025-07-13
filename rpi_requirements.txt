@@ -12,3 +12,6 @@ joblib
 # image
 imageio[ffmpeg]
 opencv-python
+
+# huggingface
+huggingface_hub
