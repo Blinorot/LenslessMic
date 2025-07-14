@@ -26,5 +26,6 @@ masks:
   seed: 123
   device: adafruit
   n: 100    # number of masks
-  shape: [18, 24]
+  shape: [54, 24] # [18, 24] -- aperture shape, 1st dim should be *3
   center: [55, 77]
+  reference_dir: null # path to reference dir to double check that all masks are different (use for test set)

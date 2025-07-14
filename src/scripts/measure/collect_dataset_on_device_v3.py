@@ -123,11 +123,35 @@ def collect_dataset(config):
             if not mask_dir.exists():
                 mask_dir.mkdir(exist_ok=True)
 
+                seen = set()
+
+                if config.masks.reference_dir is not None:
+                    ref_dir = plib.Path(config.masks.reference_dir).resolve()
+                    for file in os.listdir(ref_dir):
+                        seen_mask = np.load(ref_dir / file)
+                        seen.add(tuple(seen_mask.flatten()))
+
+                    print(f"Found {len(seen)} reference masks")
+
+                retries = 0
                 np.random.seed(config.masks.seed)
                 for i in range(config.masks.n):
                     mask_fp = mask_dir / f"mask_{i}.npy"
                     mask_vals = np.random.uniform(0, 1, config.masks.shape)
+                    # regenerate masks if it was seen
+                    flat_vals = tuple(mask_vals.flatten())
+                    while flat_vals in seen:
+                        mask_vals = np.random.uniform(0, 1, config.masks.shape)
+                        flat_vals = tuple(mask_vals.flatten())
+                        retries += 1
+                    seen.add(flat_vals)
                     np.save(mask_fp, mask_vals)
+
+                print(
+                    f"Created {len(os.listdir(str(mask_dir)))} masks. Number of retries: {retries}"
+                )
+
+                del seen
 
     # assert input directory exists
     assert os.path.exists(input_dir)
