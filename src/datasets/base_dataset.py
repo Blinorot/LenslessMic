@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 
 from src.datasets.data_utils import load_grayscale_video_ffv1, save_grayscale_video_ffv1
 from src.lensless.simulate import simulate_lensless_codec
-from src.lensless.utils import normalize_video
+from src.lensless.utils import normalize_video, simulate_psf_from_mask
 from src.transforms import MinMaxNormalize
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ class BaseDataset(Dataset):
         codec_name=None,
         codec=None,
         roi_kwargs=None,
+        sim_psf_config=None,
         psf_path=None,
     ):
         """
@@ -63,7 +64,8 @@ class BaseDataset(Dataset):
             codec (nn.Module | None): audio codec itself.
                 Shall have the same codec_name.
             roi_kwargs (dict | None): top_left, height, and width for ROI.
-            psf_path (str | None): path to .npy array with saved PSF.
+            sim_psf_config (dict | None): config for simulating PSF.
+            psf_path (str | None): path to psf (use for single-mask dataset).
         """
         self._assert_index_is_valid(index)
 
@@ -83,6 +85,8 @@ class BaseDataset(Dataset):
         self.psf = None
         if psf_path is not None:
             self.psf = torch.from_numpy(np.load(psf_path))
+
+        self.sim_psf_config = sim_psf_config
 
         self.lensless_tag = lensless_tag
         self.codec_name = codec_name
@@ -146,10 +150,21 @@ class BaseDataset(Dataset):
         lensless_video_dir = (
             audio_path.parents[1]
             / f"{self.codec_name}"
-            / f"lenseless_{self.lensless_tag}"
+            / f"lensless_{self.lensless_tag}"
         )
 
         lensless_path = lensless_video_dir / f"{filename}.mkv"
+        lensless_mask_label = lensless_video_dir / f"{filename}.txt"
+        if lensless_mask_label.exists():
+            lensless_mask_label = lensless_mask_label.read_text()
+            lensless_mask_path = (
+                lensless_video_dir / "masks" / f"mask_{lensless_mask_label}.npy"
+            )
+            lensless_mask = np.load(lensless_mask_path)
+            lensless_psf = simulate_psf_from_mask(lensless_mask, **self.sim_psf_config)
+        else:
+            lensless_psf = self.psf.clone
+
         min_vals_path = video_dir / f"{filename}_min_vals.pth"
         max_vals_path = video_dir / f"{filename}_max_vals.pth"
 
@@ -172,6 +187,7 @@ class BaseDataset(Dataset):
         final_lensless_dict = {
             "lensed_codec_video": lensed_codec_video,
             "lensless_codec_video": lensless_codec_video,
+            "lensless_psf": lensless_psf,
             "min_vals": min_vals,
             "max_vals": max_vals,
         }
@@ -184,6 +200,10 @@ class BaseDataset(Dataset):
         target_sr = self.target_sr
         if sr != target_sr:
             audio_tensor = torchaudio.functional.resample(audio_tensor, sr, target_sr)
+
+        # peak-normalization
+        audio_tensor = audio_tensor / audio_tensor.abs().max()
+
         return audio_tensor
 
     def get_spectrogram(self, audio):
@@ -434,9 +454,7 @@ class BaseDataset(Dataset):
         video_dir = example_path.parents[1] / f"{codec.codec_name}" / "lensed"
         video_dir.mkdir(exist_ok=True, parents=True)
         lensless_video_dir = (
-            example_path.parents[1]
-            / f"{codec.codec_name}"
-            / f"lenseless_{lensless_tag}"
+            example_path.parents[1] / f"{codec.codec_name}" / f"lensless_{lensless_tag}"
         )
         lensless_video_dir.mkdir(exist_ok=True, parents=True)
 

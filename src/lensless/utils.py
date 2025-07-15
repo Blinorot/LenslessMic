@@ -1,6 +1,9 @@
+import numpy as np
 import torch
 import torchvision.transforms.v2 as T
 
+from lensless.hardware.trainable_mask import AdafruitLCD
+from src.logger.utils import rgb2gray
 from src.transforms import MinMaxNormalize
 
 
@@ -270,3 +273,64 @@ def unpatchify_video(
     video = video.permute(0, 1, 2, 5, 3, 6, 4, 7).contiguous()
     video = video.reshape(B, D, orig_height, orig_width, C, T)
     return video
+
+
+def simulate_psf_from_mask(
+    mask_vals,
+    sensor,
+    slm,
+    downsample,
+    rotate=None,
+    flipud=False,
+    use_waveprop=False,
+    vertical_shift=None,
+    horizontal_shift=None,
+    scene2mask=None,
+    mask2sensor=None,
+    deadspace=True,
+    grayscale=True,
+    revert_flip=True,
+):
+    """
+    Simulate PSF given mask values.
+
+    Args:
+        mask_vals (Tensor): Initial mask parameters.
+        sensor (lensless.hardware.sensor.VirtualSensor): Sensor object.
+        slm_param : (lensless.hardware.slm.SLMParam): SLM parameters.
+        rotate (float): Rotation angle in degrees.
+        flipud (bool): Whether to flip the mask vertically.
+        use_waveprop (bool): Whether to use wave propagation for simulating
+            PSF. If False, PSF will simply be intensity of mask pattern.
+        vertical_shift (int): Vertical shift of the mask.
+        horizontal_shift (int): Horizontal shift of the mask.
+        scene2mask (float): Distance from scene to mask. Used for
+            wave propagation.
+        mask2sensor (float): Distance from mask to sensor. Used for
+            wave propagation.
+        downsample (int): Downsample factor.
+        deadspace (bool): whether to use deadspace for simulating.
+        grayscale (bool): whether to convert to grayscale.
+        revert_flip (bool): undo flip from AdafruitLCD.
+    """
+    mask = AdafruitLCD(
+        initial_vals=torch.from_numpy(mask_vals.astype(np.float32)),
+        sensor=sensor,
+        slm=slm,
+        downsample=downsample,
+        rotate=rotate,
+        flipud=flipud,
+        use_waveprop=use_waveprop,
+        vertical_shift=vertical_shift,
+        horizontal_shift=horizontal_shift,
+        scene2mask=scene2mask,
+        mask2sensor=mask2sensor,
+        deadspace=deadspace,
+    )
+    psf = mask.get_psf().detach()
+    if revert_flip:
+        psf = torch.flip(psf, dims=[-3, -2])
+    if grayscale:
+        psf = rgb2gray(psf.unsqueeze(0))[0]
+
+    return psf

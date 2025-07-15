@@ -10,6 +10,7 @@ train:
   codec_name: "codec_16x16_128"
   lensless_tag: "measured" # lensless dir name is f"lensless_{lensless_tag}"
   instance_transforms: ${transforms.instance_transforms.train}
+  sim_psf_config: ${psf}
 test:
   _target_: src.datasets.CustomDirDataset
   limit: 1
@@ -22,3 +23,4 @@ test:
   codec_name: "codec_16x16_128"
   lensless_tag: "measured"
   instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}

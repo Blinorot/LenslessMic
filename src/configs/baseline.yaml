@@ -5,6 +5,7 @@ defaults:
   - datasets: example
   - dataloader: example
   - transforms: example
+  - psf: simulate
   - _self_
 optimizer:
   _target_: torch.optim.Adam
