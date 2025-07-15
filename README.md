@@ -194,7 +194,7 @@ python3 upload_dataset.py --local-dir "PATH_TO_ROOT/data/datasets/librispeech/te
 Download/Copy your dataset on the Raspberry Pi to an SSD. For example, call it `PATH_TO_RPI_SSD/datasets/librispeech`. Also create a new `tmp_dir` on your SSD. Then, run the following script:
 
 ```bash
-DISPLAY=:0 TMPDIR=PATH_TO_RPI_SSD/tmp_dir python -m src.scripts.measure.collect_dataset_on_device_v3 -cn=collect_dataset_multimask input_dir=PATH_TO_RPI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lensed output_dir=PATH_TO_RPI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lenseless_measurement n_files=null
+DISPLAY=:0 TMPDIR=PATH_TO_RPI_SSD/tmp_dir python -m src.scripts.measure.collect_dataset_on_device_v3 -cn=collect_dataset_multimask input_dir=PATH_TO_RPI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lensed output_dir=PATH_TO_RPI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lensless_measurement n_files=null
 ```
 
 If you are generating `train` and `test` sets, ensure to use different random seeds `mask.seed=` and include `mask.reference_dir` to avoid collisions.
@@ -203,7 +203,7 @@ Upload collected dataset on HF directly from your RPi.
 
 ```bash
 cd scripts
-python3 upload_dataset.py --local-dir "PATH_TO_PI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lenseless_measurement" --remote-dir "test-clean/16x16_130_16khz/lenseless_measurement"
+python3 upload_dataset.py --local-dir "PATH_TO_PI_SSD/datasets/librispeech/test-clean/16x16_130_16khz/lensless_measurement" --remote-dir "test-clean/16x16_130_16khz/lensless_measurement"
 ```
 
 > [!IMPORTANT]
