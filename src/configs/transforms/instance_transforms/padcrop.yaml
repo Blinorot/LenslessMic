@@ -3,7 +3,7 @@ train:
     _target_: torchvision.transforms.v2.Compose
     transforms:
       - _target_: src.transforms.PadCrop
-        length: 1
+        length: 16
         pad_format: "replicated"
         random_crop: true
 inference:
@@ -11,6 +11,6 @@ inference:
     _target_: torchvision.transforms.v2.Compose
     transforms:
       - _target_: src.transforms.PadCrop
-        length: 1
+        length: 16
         pad_format: "replicated"
         random_crop: false
