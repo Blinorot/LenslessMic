@@ -9,6 +9,7 @@ pandas
 wandb
 comet_ml
 hydra-core
+wget
 
 # lensless
 git+https://github.com/LCAV/LenslessPiCam.git
