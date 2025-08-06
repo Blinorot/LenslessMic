@@ -85,6 +85,7 @@ class BaseDataset(Dataset):
         self.psf = None
         if psf_path is not None:
             self.psf = torch.from_numpy(np.load(psf_path))
+        self.computed_psfs = {}
 
         self.sim_psf_config = sim_psf_config
 
@@ -157,11 +158,18 @@ class BaseDataset(Dataset):
         lensless_mask_label = lensless_video_dir / f"{filename}.txt"
         if lensless_mask_label.exists():
             lensless_mask_label = lensless_mask_label.read_text()
-            lensless_mask_path = (
-                lensless_video_dir / "masks" / f"mask_{lensless_mask_label}.npy"
-            )
-            lensless_mask = np.load(lensless_mask_path)
-            lensless_psf = simulate_psf_from_mask(lensless_mask, **self.sim_psf_config)
+            if self.computed_psfs.get(lensless_mask_label) is not None:
+                lensless_psf = self.computed_psfs[lensless_mask_label]
+            else:
+                # compute psf only once
+                lensless_mask_path = (
+                    lensless_video_dir / "masks" / f"mask_{lensless_mask_label}.npy"
+                )
+                lensless_mask = np.load(lensless_mask_path)
+                lensless_psf = simulate_psf_from_mask(
+                    lensless_mask, **self.sim_psf_config
+                )
+                self.computed_psfs[lensless_mask_label] = lensless_psf.clone()
         else:
             lensless_psf = self.psf.clone()
 
