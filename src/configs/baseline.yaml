@@ -18,6 +18,9 @@ lr_scheduler:
   step_size: ${trainer.epoch_len}
 loss_function:
   _target_: src.loss.ReconstructionLoss
+  codec_mse_coef: 1
+  audio_l1_coef: 1
+  audio_snr_coef: 1
 trainer:
   log_step: 50
   n_epochs: 100
