@@ -10,7 +10,7 @@ test:
   _target_: src.datasets.LibrispeechDataset
   limit: 1
   max_audio_length: 3
-  part: "test-clean-100"
+  part: "test-clean"
   roi_kwargs: ${reconstruction.roi_kwargs}
   lensless_tag: "measurement"
   instance_transforms: ${transforms.instance_transforms.inference}
