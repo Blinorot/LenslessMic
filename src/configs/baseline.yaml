@@ -2,7 +2,7 @@ defaults:
   - model: PSF_Unet4M_U5_Unet4M
   - writer: wandb
   - metrics: main
-  - datasets: onebatchtest
+  - datasets: main_short_test
   - dataloader: main
   - transforms: padcrop
   - codec: dac
@@ -29,7 +29,7 @@ trainer:
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
   override: False # if True, will override the previous run with the same name
-  monitor: "max test_MulticlassAccuracy" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
+  monitor: "max test_SISDR" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"

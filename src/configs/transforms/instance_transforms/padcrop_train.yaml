@@ -6,11 +6,4 @@ train:
         length: 4
         pad_format: "replicated"
         random_crop: true
-inference:
-  all:
-    _target_: torchvision.transforms.v2.Compose
-    transforms:
-      - _target_: src.transforms.PadCrop
-        length: 16
-        pad_format: "replicated"
-        random_crop: false
+inference: null
