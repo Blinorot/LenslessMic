@@ -61,12 +61,13 @@ class LenslessWrapper(nn.Module):
         for param in self.parameters():
             param.requires_grad = requires_grad
 
-    def forward(self, lensless, roi_kwargs=None, corners_list=None):
+    def forward(self, lensless, psfs=None, roi_kwargs=None, corners_list=None):
         """
         Reconstruct lensless image.
 
         Args:
             lensless (Tensor): lensless image (BxDxHxWxC).
+            psfs (None | Tensor): optional PSFs (used instead of default).
             roi_kwargs (dict | optional): top_left, height, and width for ROI.
             corners_list (None | list): list of coordinates for matching corners.
         Returns:
@@ -76,11 +77,13 @@ class LenslessWrapper(nn.Module):
         # apply
         if isinstance(self.recon, nn.Module):
             # Trainable Recon can work with batch
-            recon_lensed = self.recon(lensless)
+            recon_lensed = self.recon(lensless, psfs=psfs)
         else:
             recon_list = []
             for i in range(lensless.shape[0]):
                 self.recon.set_data(lensless[i : i + 1])
+                if psfs is not None:
+                    self.recon._set_psf(psfs[i])
                 # non-trainable methods work only with batch_size = 1
                 # and remove it in the end
                 recon_list.append(self.recon.apply(plot=False).unsqueeze(0))
@@ -99,12 +102,15 @@ class LenslessWrapper(nn.Module):
 
         return recon_lensed
 
-    def reconstruct_video(self, lensless_video, roi_kwargs=None, corners_list=None):
+    def reconstruct_video(
+        self, lensless_video, lensless_psf=None, roi_kwargs=None, corners_list=None
+    ):
         """
         Reconstruct lensless video.
 
         Args:
             lensless_video (Tensor): lensless video (BxDxHxWxCxT_latent).
+            lensless_psf (None | Tensor): optional PSF instead of default one.
             roi_kwargs (dict | optional): top_left, height, and width for ROI.
             corners_list (None | list): list of coordinates for matching corners.
         Returns:
@@ -116,7 +122,12 @@ class LenslessWrapper(nn.Module):
             lensless_video = lensless_video.permute(0, 5, 1, 2, 3, 4).contiguous()
             B, T, D, H, W, C = lensless_video.shape
             lensless_video = lensless_video.reshape(B * T, D, H, W, C)
-            recon_lensed_video = self.forward(lensless_video, roi_kwargs, corners_list)
+            recon_lensed_video = self.forward(
+                lensless_video,
+                psfs=lensless_psf,
+                roi_kwargs=roi_kwargs,
+                corners_list=corners_list,
+            )
             _, _, H, W, _ = recon_lensed_video.shape
             recon_lensed_video = recon_lensed_video.reshape(B, T, D, H, W, C)
             recon_lensed_video = recon_lensed_video.permute(
@@ -129,7 +140,12 @@ class LenslessWrapper(nn.Module):
         recon_lensed_video = []
         for frame_index in range(lensless_video.shape[-1]):
             frame = lensless_video[..., frame_index]
-            recon_lensed = self.forward(frame, roi_kwargs, corners_list).unsqueeze(-1)
+            recon_lensed = self.forward(
+                frame,
+                psfs=lensless_psf,
+                roi_kwargs=roi_kwargs,
+                corners_list=corners_list,
+            ).unsqueeze(-1)
             recon_lensed_video.append(recon_lensed)
         recon_lensed_video = torch.cat(recon_lensed_video, dim=-1)
         return recon_lensed_video

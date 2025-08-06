@@ -18,6 +18,7 @@ class BaseTrainer:
     def __init__(
         self,
         model,
+        codec,
         criterion,
         metrics,
         optimizer,
@@ -34,6 +35,7 @@ class BaseTrainer:
         """
         Args:
             model (nn.Module): PyTorch model.
+            codec (nn.Module): Audio codec.
             criterion (nn.Module): loss function for model training.
             metrics (dict): dict with the definition of metrics for training
                 (metrics[train]) and inference (metrics[inference]). Each
@@ -67,6 +69,7 @@ class BaseTrainer:
         self.log_step = config.trainer.get("log_step", 50)
 
         self.model = model
+        self.codec = codec
         self.criterion = criterion
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler

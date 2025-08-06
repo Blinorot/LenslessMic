@@ -1,26 +1,18 @@
 train:
-  _target_: src.datasets.CustomDirDataset
+  _target_: src.datasets.LibrispeechDataset
   limit: 1
-  part: "train"
-  dataset_name: "test-clean"
-  roi_kwargs:
-    top_left: [65, 118]
-    height: 256
-    width: 256
-  codec_name: "codec_16x16_128"
-  lensless_tag: "measured" # lensless dir name is f"lensless_{lensless_tag}"
+  max_audio_length: 3
+  part: "train-clean-100"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  lensless_tag: "measurement" # lensless dir name is f"lensless_{lensless_tag}"
   instance_transforms: ${transforms.instance_transforms.train}
   sim_psf_config: ${psf}
 test:
-  _target_: src.datasets.CustomDirDataset
+  _target_: src.datasets.LibrispeechDataset
   limit: 1
-  part: "test-clean"
-  dataset_name: "example"
-  roi_kwargs:
-    top_left: [65, 118]
-    height: 256
-    width: 256
-  codec_name: "codec_16x16_128"
-  lensless_tag: "measured"
+  max_audio_length: 3
+  part: "train-clean-100"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  lensless_tag: "measurement"
   instance_transforms: ${transforms.instance_transforms.inference}
   sim_psf_config: ${psf}

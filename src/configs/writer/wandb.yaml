@@ -1,8 +1,12 @@
 _target_: src.logger.WandBWriter
-project_name: "pytorch_template"
+project_name: "lenslessmic"
 entity: null
 run_name: "testing"
 mode: "online"
 loss_names: ["loss"] # which losses to log (useful for multi-loss tasks, s.a. GANs)
 log_checkpoints: False # set to True if you want to log save_dir with checkpoints to W&B
 id_length: 8 # length of the run_id
+
+# plotting
+names: ["input-1:frame", "input-2:frame", "input-3:frame", "input-4:frame"]
+figsize: [15, 15]

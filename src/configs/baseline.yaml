@@ -1,10 +1,12 @@
 defaults:
-  - model: baseline
+  - model: PSF_Unet4M_U5_Unet4M
   - writer: wandb
   - metrics: example
-  - datasets: example
+  - datasets: example_onebatchtest
   - dataloader: example
-  - transforms: example
+  - transforms: example_none
+  - codec: dac
+  - reconstruction: 16x16
   - psf: simulate
   - _self_
 optimizer:
@@ -15,12 +17,12 @@ lr_scheduler:
   gamma: 0.9
   step_size: ${trainer.epoch_len}
 loss_function:
-  _target_: src.loss.ExampleLoss
+  _target_: src.loss.ReconstructionLoss
 trainer:
   log_step: 50
   n_epochs: 100
   epoch_len: 500
-  device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
+  device_tensors: ["lensless_codec_video", "lensless_psf"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
   override: False # if True, will override the previous run with the same name

@@ -1,5 +1,5 @@
 _target_: src.logger.CometMLWriter
-project_name: "pytorch_template"
+project_name: "lenslessmic"
 workspace: null
 run_name: "testing"
 mode: "online"

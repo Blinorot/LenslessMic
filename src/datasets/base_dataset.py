@@ -163,13 +163,25 @@ class BaseDataset(Dataset):
             lensless_mask = np.load(lensless_mask_path)
             lensless_psf = simulate_psf_from_mask(lensless_mask, **self.sim_psf_config)
         else:
-            lensless_psf = self.psf.clone
+            lensless_psf = self.psf.clone()
 
         min_vals_path = video_dir / f"{filename}_min_vals.pth"
         max_vals_path = video_dir / f"{filename}_max_vals.pth"
 
-        min_vals = torch.load(min_vals_path, map_location="cpu")
-        max_vals = torch.load(max_vals_path, map_location="cpu")
+        min_vals_list = torch.load(min_vals_path, map_location="cpu")
+        min_vals = []
+        for elem in min_vals_list:
+            if isinstance(elem, float):
+                elem = torch.tensor(elem).reshape(1, 1, 1, 1, 1)  # B x D x H x W x C
+            min_vals.append(elem.unsqueeze(-1))
+        min_vals = torch.cat(min_vals, dim=-1)
+        max_vals_list = torch.load(max_vals_path, map_location="cpu")
+        max_vals = []
+        for elem in max_vals_list:
+            if isinstance(elem, float):
+                elem = torch.tensor(elem).reshape(1, 1, 1, 1, 1)  # B x D x H x W x C
+            max_vals.append(elem.unsqueeze(-1))
+        max_vals = torch.cat(max_vals, dim=-1)
 
         lensless_codec_video = load_grayscale_video_ffv1(str(lensless_path))
 

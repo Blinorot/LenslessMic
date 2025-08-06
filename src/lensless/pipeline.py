@@ -1,3 +1,4 @@
+import torch
 import torch.nn.functional as F
 
 from src.lensless.utils import ungroup_frames, unpatchify_video
@@ -9,12 +10,14 @@ def reconstruct_codec(
     recon_model,
     min_vals,
     max_vals,
+    lensless_psf=None,
     resize_coef=1,
     roi_kwargs=None,
     corners_list=None,
     group_frames_kwargs=None,
     patchify_video_kwargs=None,
     normalize_lensless=False,
+    **kwargs,
 ):
     """
     Reconstruct lensed codec video from a lensless one.
@@ -27,6 +30,7 @@ def reconstruct_codec(
             Used for normalization.
         max_vals (float | Tensor): max_vals for original lensed codec video.
             Used for normalization.
+        lensless_psf (None | Tensor): optional PSF instead of default one.
         resize_coef (int): the scaling factor for the original lensed
             codec video.
         roi_kwargs (dict | optional): top_left, height, and width for ROI.
@@ -46,7 +50,10 @@ def reconstruct_codec(
         lensless_codec_video = min_max_normalizer.normalize(lensless_codec_video)
 
     recon_codec_video = recon_model.reconstruct_video(
-        lensless_codec_video, roi_kwargs, corners_list
+        lensless_codec_video,
+        lensless_psf=lensless_psf,
+        roi_kwargs=roi_kwargs,
+        corners_list=corners_list,
     )
 
     if group_frames_kwargs is not None:
@@ -71,9 +78,15 @@ def reconstruct_codec(
         recon_codec_video = unpatchify_video(recon_codec_video, **patchify_video_kwargs)
 
     if isinstance(min_vals, float):
-        min_vals = [min_vals] * recon_codec_video.shape[-1]
+        min_vals = torch.tensor(min_vals, device=recon_codec_video.device).reshape(
+            1, 1, 1, 1, 1
+        )
+        min_vals = min_vals.repeat(1, 1, 1, 1, 1, recon_codec_video.shape[-1])
     if isinstance(max_vals, float):
-        max_vals = [max_vals] * recon_codec_video.shape[-1]
+        max_vals = torch.tensor(max_vals, device=recon_codec_video.device).reshape(
+            1, 1, 1, 1, 1
+        )
+        max_vals = max_vals.repeat(1, 1, 1, 1, 1, recon_codec_video.shape[-1])
 
     for i in range(recon_codec_video.shape[-1]):
         # normalize each frame to [0, 1]
@@ -82,7 +95,9 @@ def reconstruct_codec(
         )
         # denormalize to codec range
         recon_codec_video[..., i] = min_max_normalizer.denormalize(
-            recon_codec_video[..., i], min_val=min_vals[i], max_val=max_vals[i]
+            recon_codec_video[..., i],
+            min_val=min_vals[..., i],
+            max_val=max_vals[..., i],
         )
 
     return recon_codec_video

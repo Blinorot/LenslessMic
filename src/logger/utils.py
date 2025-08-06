@@ -101,13 +101,15 @@ def plot_triplet(axs, lensed, lensless, reconstructed, tag="", index=0):
     axs[2].set_title(tag + "Reconstructed")
 
 
-def plot_images(imgs, config):
+def plot_images(imgs, config, permute=True):
     """
     Combine several images into one figure.
 
     Args:
-        imgs (Tensor): array of images (B X C x H x W).
+        imgs (Tensor): array of images (B X C x H x W)
+            or (B x H x W x C).
         config (DictConfig): hydra experiment config.
+        permute (bool): permute dimensions (if channels-first).
     Returns:
         image (Tensor): a single figure with imgs plotted side-to-side.
     """
@@ -116,9 +118,11 @@ def plot_images(imgs, config):
     # figure size
     figsize = config.writer.figsize
     fig, axes = plt.subplots(1, len(names), figsize=figsize)
-    for i in range(len(names)):
+    for i in range(min(len(names), imgs.shape[0])):
         # channels must be in the last dim
-        img = imgs[i].permute(1, 2, 0)
+        img = imgs[i]
+        if permute:
+            img = img.permute(1, 2, 0)
         axes[i].imshow(img)
         axes[i].set_title(names[i])
         axes[i].axis("off")  # we do not need axis

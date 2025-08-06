@@ -7,7 +7,11 @@ from omegaconf import OmegaConf
 
 from src.datasets.data_utils import get_dataloaders
 from src.trainer import Trainer
-from src.utils.init_utils import set_random_seed, setup_saving_and_logging
+from src.utils.init_utils import (
+    resolve_class,
+    set_random_seed,
+    setup_saving_and_logging,
+)
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -33,9 +37,12 @@ def main(config):
     else:
         device = config.trainer.device
 
+    codec_dataset = instantiate(config.codec)  # cpu
+    codec_trainer = instantiate(config.codec).to(device)  # on device
+
     # setup data_loader instances
     # batch_transforms should be put on device
-    dataloaders, batch_transforms = get_dataloaders(config, device)
+    dataloaders, batch_transforms = get_dataloaders(config, device, codec_dataset)
 
     # build model architecture, then print to console
     model = instantiate(config.model).to(device)
@@ -56,6 +63,7 @@ def main(config):
 
     trainer = Trainer(
         model=model,
+        codec=codec_trainer,
         criterion=loss_function,
         metrics=metrics,
         optimizer=optimizer,
@@ -74,4 +82,5 @@ def main(config):
 
 
 if __name__ == "__main__":
+    OmegaConf.register_new_resolver("resolve_class", resolve_class)
     main()

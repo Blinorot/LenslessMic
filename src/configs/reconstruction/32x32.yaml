@@ -1,0 +1,7 @@
+roi_kwargs:
+  top_left: [65, 118]
+  height: 256
+  width: 256
+resize_coef: 8
+normalize_lensless: True
+corners_list: null

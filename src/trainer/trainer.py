@@ -1,3 +1,5 @@
+from src.lensless.pipeline import reconstruct_codec
+from src.logger.utils import plot_images
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -34,7 +36,13 @@ class Trainer(BaseTrainer):
             metric_funcs = self.metrics["train"]
             self.optimizer.zero_grad()
 
-        outputs = self.model(**batch)
+        recon_codec_video = reconstruct_codec(
+            recon_model=self.model,
+            codec=self.codec,
+            **self.config.reconstruction,
+            **batch
+        )
+        outputs = {"recon_codec_video": recon_codec_video}
         batch.update(outputs)
 
         all_losses = self.criterion(**batch)
@@ -73,7 +81,20 @@ class Trainer(BaseTrainer):
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
             # Log Stuff
-            pass
+            self.log_frame(**batch)
         else:
             # Log Stuff
-            pass
+            self.log_frame(**batch)
+
+    def log_frame(
+        self, lensed_codec_video, lensless_codec_video, recon_codec_video, **batch
+    ):
+        lensed_frames = lensed_codec_video[:, 0, :, :, :, 0].detach().cpu()
+        recon_frames = recon_codec_video[:, 0, :, :, :, 0].detach().cpu()
+        lensless_frames = lensless_codec_video[:, 0, :, :, :, 0].detach().cpu()
+        lensed_img = plot_images(lensed_frames, self.config, permute=False)
+        recon_img = plot_images(recon_frames, self.config, permute=False)
+        lensless_img = plot_images(lensless_frames, self.config, permute=False)
+        self.writer.add_image("lensed_frames", lensed_img)
+        self.writer.add_image("recon_frames", recon_img)
+        self.writer.add_image("lensless_frames", lensless_img)

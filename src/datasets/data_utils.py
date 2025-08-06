@@ -174,7 +174,7 @@ def move_batch_transforms_to_device(batch_transforms, device):
                 transforms[transform_name] = transforms[transform_name].to(device)
 
 
-def get_dataloaders(config, device):
+def get_dataloaders(config, device, codec):
     """
     Create dataloaders for each of the dataset partitions.
     Also creates instance and batch transforms.
@@ -182,6 +182,7 @@ def get_dataloaders(config, device):
     Args:
         config (DictConfig): hydra experiment config.
         device (str): device to use for batch transforms.
+        codec (nn.Module): audio codec for the dataset.
     Returns:
         dataloaders (dict[DataLoader]): dict containing dataloader for a
             partition defined by key.
@@ -193,25 +194,29 @@ def get_dataloaders(config, device):
     batch_transforms = instantiate(config.transforms.batch_transforms)
     move_batch_transforms_to_device(batch_transforms, device)
 
-    # dataset partitions init
-    datasets = instantiate(config.datasets)  # instance transforms are defined inside
-
     # dataloaders init
     dataloaders = {}
     for dataset_partition in config.datasets.keys():
-        dataset = datasets[dataset_partition]
+        # dataset partitions init
+        dataset = instantiate(
+            config.datasets[dataset_partition], codec=codec
+        )  # instance transforms are defined inside
 
-        assert config.dataloader.batch_size <= len(dataset), (
-            f"The batch size ({config.dataloader.batch_size}) cannot "
+        dataloader_type = "train" if dataset_partition == "train" else "inference"
+
+        dataloader_config = config.dataloader[dataloader_type]
+
+        assert dataloader_config["batch_size"] <= len(dataset), (
+            f"The batch size ({dataloader_config['batch_size']}) cannot "
             f"be larger than the dataset length ({len(dataset)})"
         )
 
         partition_dataloader = instantiate(
-            config.dataloader,
+            dataloader_config,
             dataset=dataset,
             collate_fn=collate_fn,
-            drop_last=(dataset_partition == "train"),
-            shuffle=(dataset_partition == "train"),
+            drop_last=(dataloader_type == "train"),
+            shuffle=(dataloader_type == "train"),
             worker_init_fn=set_worker_seed,
         )
         dataloaders[dataset_partition] = partition_dataloader

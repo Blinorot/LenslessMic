@@ -9,6 +9,7 @@ psf_path: data/capture/digicam_psf_june16/SIM_psf.png
 psf_loader_kwargs:
   downsample: 8
   return_bg: false
+grayscale_psf: true
 
 # define lensless model
 recon_name: UnrolledADMM
