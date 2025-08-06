@@ -10,4 +10,4 @@ class SISDRMetric(BaseMetric):
         self.metric = scale_invariant_signal_distortion_ratio
 
     def __call__(self, codec_audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
-        return self.metric(recon_audio, codec_audio)
+        return self.metric(recon_audio.detach(), codec_audio.detach()).item()
