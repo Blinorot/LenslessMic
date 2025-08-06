@@ -1,0 +1,7 @@
+device: "auto"
+train:
+  - _target_: src.metrics.SISDRMetric
+    name: "SISDR"
+inference: # metrics that are calculated during inference (eval)
+  - _target_: src.metrics.SISDRMetric
+    name: "SISDR"

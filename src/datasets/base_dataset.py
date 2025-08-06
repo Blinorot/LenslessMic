@@ -248,9 +248,14 @@ class BaseDataset(Dataset):
             for transform_name in self.instance_transforms.keys():
                 if transform_name == "get_spectrogram":
                     continue  # skip special key
-                instance_data[transform_name] = self.instance_transforms[
-                    transform_name
-                ](instance_data[transform_name])
+                elif transform_name == "all":
+                    instance_data = self.instance_transforms[transform_name](
+                        instance_data
+                    )
+                else:
+                    instance_data[transform_name] = self.instance_transforms[
+                        transform_name
+                    ](instance_data[transform_name])
         return instance_data
 
     @staticmethod

@@ -1,0 +1,16 @@
+train:
+  all: # use dict as input
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: src.transforms.PadCrop
+        length: 1
+        pad_format: "replicated"
+        random_crop: true
+inference:
+  all:
+    _target_: torchvision.transforms.v2.Compose
+    transforms:
+      - _target_: src.transforms.PadCrop
+        length: 1
+        pad_format: "replicated"
+        random_crop: false

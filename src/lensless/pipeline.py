@@ -88,16 +88,20 @@ def reconstruct_codec(
         )
         max_vals = max_vals.repeat(1, 1, 1, 1, 1, recon_codec_video.shape[-1])
 
+    normalized_frames = []
+
     for i in range(recon_codec_video.shape[-1]):
         # normalize each frame to [0, 1]
-        recon_codec_video[..., i] = min_max_normalizer.normalize(
-            recon_codec_video[..., i]
-        )
+        normalized_frame = min_max_normalizer.normalize(recon_codec_video[..., i])
         # denormalize to codec range
-        recon_codec_video[..., i] = min_max_normalizer.denormalize(
-            recon_codec_video[..., i],
+        normalized_frame = min_max_normalizer.denormalize(
+            normalized_frame,
             min_val=min_vals[..., i],
             max_val=max_vals[..., i],
         )
+
+        normalized_frames.append(normalized_frame.unsqueeze(-1))
+
+    recon_codec_video = torch.cat(normalized_frames, dim=-1)
 
     return recon_codec_video
