@@ -36,3 +36,4 @@ pre-commit
 
 # huggingface
 huggingface_hub
+datasets

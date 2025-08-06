@@ -5,7 +5,7 @@ use_batch_video_version: false
 freeze_weights: false
 
 # define psf for initialization
-psf_path: data/capture/digicam_psf_june16/SIM_psf.png
+psf_path: data/digicam_psf/SIM_psf.png
 psf_loader_kwargs:
   downsample: 8
   return_bg: false
