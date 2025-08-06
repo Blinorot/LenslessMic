@@ -10,3 +10,4 @@ id_length: 8 # length of the run_id
 # plotting
 names: ["input-1:frame", "input-2:frame", "input-3:frame", "input-4:frame"]
 figsize: [15, 15]
+sample_rate: 16000

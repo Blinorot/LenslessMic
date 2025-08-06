@@ -85,9 +85,20 @@ class Trainer(BaseTrainer):
         if mode == "train":  # the method is called only every self.log_step steps
             # Log Stuff
             self.log_frame(**batch)
+            self.log_audio(**batch)
         else:
             # Log Stuff
             self.log_frame(**batch)
+            self.log_audio(**batch)
+
+    def log_audio(self, audio, codec_audio, recon_audio, **batch):
+        audio_example = audio[0].detach().cpu()
+        codec_audio_example = codec_audio[0].detach().cpu()
+        recon_audio_example = recon_audio[0].detach().cpu()
+        sr = self.config.writer.sample_rate
+        self.writer.add_audio("audio", audio_example, sample_rate=sr)
+        self.writer.add_audio("codec_audio", codec_audio_example, sample_rate=sr)
+        self.writer.add_audio("recon_audio", recon_audio_example, sample_rate=sr)
 
     def log_frame(
         self, lensed_codec_video, lensless_codec_video, recon_codec_video, **batch
