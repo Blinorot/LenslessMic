@@ -32,3 +32,6 @@ descript-audio-codec
 black
 isort
 pre-commit
+
+# huggingface
+huggingface_hub
