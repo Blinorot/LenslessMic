@@ -119,6 +119,8 @@ def plot_images(imgs, config, permute=True):
     figsize = config.writer.figsize
     n_imgs = min(len(names), imgs.shape[0])
     fig, axes = plt.subplots(1, n_imgs, figsize=figsize)
+    if n_imgs == 1:
+        axes = [axes]
     for i in range(n_imgs):
         # channels must be in the last dim
         img = imgs[i]
