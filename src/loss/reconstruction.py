@@ -24,7 +24,7 @@ class ReconstructionLoss(nn.Module):
     ):
         codec_mse_loss = self.mse_loss(recon_codec_video, lensed_codec_video)
         audio_l1_loss = self.l1_loss(recon_audio, codec_audio)
-        audio_snr_loss = self.snr_loss(recon_audio, codec_audio)
+        audio_snr_loss = self.snr_loss(recon_audio[:, 0, :], codec_audio[:, 0, :])
         loss = (
             self.codec_mse_coef * codec_mse_loss
             + self.audio_l1_coef * audio_l1_loss
