@@ -38,6 +38,8 @@ def main(args):
                 allow_patterns.append(f"{object_name}.flac")
                 allow_patterns.append(f"{object_name}.wav")
                 allow_patterns.append(f"{object_name}.mp3")
+                # add transcription
+                allow_patterns.append(f"{object_name}.txt")
 
     # Upload directory to desired path in the repo
     print(
