@@ -11,7 +11,8 @@ def init_asr_model(model_id="openai/whisper-tiny", device="cpu"):
     via config.asr.model_id (id from HuggingFace).
 
     Args:
-        config: Hydra config to control ASR and device.
+        model_id (str): model name on HuggingFace.
+        device (str): model device.
     Returns:
         asr_pipeline: HF pipeline to convert speech into text.
     """
@@ -38,21 +39,28 @@ def init_asr_model(model_id="openai/whisper-tiny", device="cpu"):
     return asr_pipeline
 
 
-def run_asr_model(asr_pipeline, audio):
+def run_asr_model(asr_pipeline, audio, normalize=True):
     """
     Get transcription for a speech input.
 
     Args:
         asr_pipeline: HF pipeline to get text from audio input.
-        audio (torch.Tensor): input audio.
+        audio (torch.Tensor): input audio (B x 1 x T).
+        normalize (bool): whether to normalize text.
     Returns:
-        text_output (str): text transcription of user's query.
+        text (list[str]): text transcription of the given audio.
     """
     # pipeline expects numpy array of shape (T)
     # so we convert and take 0-th channel
-    text_output = asr_pipeline(audio.numpy()[0])["text"]
 
-    return text_output
+    text = []
+    for elem in audio:
+        text_output = asr_pipeline(elem.numpy()[0])["text"]
+        if normalize:
+            text_output = normalize_text(text_output)
+        text.append(text_output)
+
+    return text
 
 
 def normalize_text(text: str):

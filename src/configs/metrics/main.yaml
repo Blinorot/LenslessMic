@@ -5,3 +5,13 @@ train:
 inference: # metrics that are calculated during inference (eval)
   - _target_: src.metrics.SISDRMetric
     name: "SISDR"
+  - _target_: src.metrics.STOIMetric
+    name: "STOI"
+  - _target_: src.metrics.WERMetric
+    name: "WER"
+  - _target_: src.metrics.PSNRMetric
+    name: "PSNR"
+  - _target_: src.metrics.GMSDMetric
+    name: "GMSD"
+  - _target_: src.metrics.MSEMetric
+    name: "MSE"
