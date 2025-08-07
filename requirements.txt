@@ -38,3 +38,5 @@ pre-commit
 # huggingface
 huggingface_hub
 datasets
+transformers
+safetensors==0.4.3

@@ -36,5 +36,7 @@ class WERMetric(BaseMetric):
         self.asr_pipeline = init_asr_model(model_id=model_id, device=device)
 
     def __call__(self, text, recon_audio, **kwargs):
-        recon_text = run_asr_model(self.asr_pipeline, recon_audio, normalize=True)
+        recon_text = run_asr_model(
+            self.asr_pipeline, recon_audio.detach().cpu(), normalize=True
+        )
         return wer(recon_text, text).item()
