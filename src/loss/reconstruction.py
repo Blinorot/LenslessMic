@@ -23,8 +23,17 @@ class ReconstructionLoss(nn.Module):
         self, lensed_codec_video, recon_codec_video, codec_audio, recon_audio, **batch
     ):
         codec_mse_loss = self.mse_loss(recon_codec_video, lensed_codec_video)
-        audio_l1_loss = self.l1_loss(recon_audio, codec_audio)
-        audio_snr_loss = self.snr_loss(recon_audio[:, 0, :], codec_audio[:, 0, :])
+
+        if self.audio_l1_coef > 0:
+            audio_l1_loss = self.l1_loss(recon_audio, codec_audio)
+        else:
+            audio_l1_loss = torch.tensor(0, device=codec_mse_loss.device)
+
+        if self.audio_snr_coef > 0:
+            audio_snr_loss = self.snr_loss(recon_audio[:, 0, :], codec_audio[:, 0, :])
+        else:
+            audio_snr_loss = torch.tensor(0, device=codec_mse_loss.device)
+
         loss = (
             self.codec_mse_coef * codec_mse_loss
             + self.audio_l1_coef * audio_l1_loss

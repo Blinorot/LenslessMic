@@ -17,10 +17,10 @@ recon_kwargs:
   # Number of iterations
   n_iter: 5
   # Hyperparameters
-  mu1: 1e-4
-  mu2: 1e-4
-  mu3: 1e-4
-  tau: 2e-4
+  # mu1: 1e-4
+  # mu2: 1e-4
+  # mu3: 1e-4
+  # tau: 2e-4
   pre_process:
     _target_: lensless.recon.drunet.network_unet.UNetRes
     in_nc: 2 # grayscale +

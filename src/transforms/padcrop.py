@@ -40,7 +40,7 @@ class PadCrop(nn.Module):
                 lensless_codec_video = lensless_codec_video.repeat(*repeats)
                 audio = audio.repeat(1, pad_repeat_times)
 
-        len_difference = self.length - lensed_codec_video.shape[-1]
+        len_difference = lensed_codec_video.shape[-1] - self.length
         if self.random_crop and len_difference > 0:
             start = np.random.choice(len_difference + 1)
         else:
