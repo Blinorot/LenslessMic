@@ -1,7 +1,9 @@
 import torch
+from piq import GMSDLoss, SSIMLoss
 from torch import nn
 
 from src.loss.snr import PairwiseNegSDR
+from src.transforms import MinMaxNormalize
 
 
 class ReconstructionLoss(nn.Module):
@@ -9,20 +11,67 @@ class ReconstructionLoss(nn.Module):
     Reconstruction loss for lensless images.
     """
 
-    def __init__(self, codec_mse_coef=1, audio_l1_coef=1, audio_snr_coef=1):
+    def __init__(
+        self,
+        codec_mse_coef=1,
+        codec_ssim_coef=1,
+        codec_gmsd_coef=1,
+        audio_l1_coef=1,
+        audio_snr_coef=1,
+        ssim_kernel=3,
+        ssim_sigma=0.5,
+    ):
         super().__init__()
+        # codec
         self.mse_loss = nn.MSELoss()
+        self.ssim_loss = SSIMLoss(
+            kernel_size=ssim_kernel, kernel_sigma=ssim_sigma, data_range=1.0
+        )
+        self.gmsd_loss = GMSDLoss()
+
+        # audio
         self.l1_loss = nn.L1Loss()
         self.snr_loss = PairwiseNegSDR(sdr_type="snr")
 
         self.codec_mse_coef = codec_mse_coef
+        self.codec_ssim_coef = codec_ssim_coef
+        self.codec_gmsd_coef = codec_gmsd_coef
         self.audio_l1_coef = audio_l1_coef
         self.audio_snr_coef = audio_snr_coef
+
+        # video is B x D x H x W x C x T
+        self.normalizer = MinMaxNormalize(dim=0)  # across batches
 
     def forward(
         self, lensed_codec_video, recon_codec_video, codec_audio, recon_audio, **batch
     ):
-        codec_mse_loss = self.mse_loss(recon_codec_video, lensed_codec_video)
+        # codec losses
+
+        if self.codec_mse_coef > 0:
+            codec_mse_loss = self.mse_loss(recon_codec_video, lensed_codec_video)
+        else:
+            codec_mse_loss = torch.tensor(0, device=recon_codec_video.device)
+
+        # now with normalized video
+        # merge batch and T
+        normalized_lensed_codec_video = self.prepare_video_for_loss(lensed_codec_video)
+        normalized_recon_codec_video = self.prepare_video_for_loss(recon_codec_video)
+
+        if self.codec_ssim_coef > 0:
+            codec_ssim_loss = self.ssim_loss(
+                normalized_recon_codec_video, normalized_lensed_codec_video
+            )
+        else:
+            codec_ssim_loss = torch.tensor(0, device=codec_mse_loss.device)
+
+        if self.codec_gmsd_coef > 0:
+            codec_gmsd_loss = self.gmsd_loss(
+                normalized_recon_codec_video, normalized_lensed_codec_video
+            )
+        else:
+            codec_gmsd_loss = torch.tensor(0, device=codec_mse_loss.device)
+
+        # audio losses
 
         if self.audio_l1_coef > 0:
             audio_l1_loss = self.l1_loss(recon_audio, codec_audio)
@@ -34,14 +83,27 @@ class ReconstructionLoss(nn.Module):
         else:
             audio_snr_loss = torch.tensor(0, device=codec_mse_loss.device)
 
+        # total loss
+
         loss = (
             self.codec_mse_coef * codec_mse_loss
+            + self.codec_ssim_coef * codec_ssim_loss
+            + self.codec_gmsd_coef * codec_gmsd_loss
             + self.audio_l1_coef * audio_l1_loss
             + self.audio_snr_coef * audio_snr_loss
         )
         return {
             "loss": loss,
             "codec_mse_loss": codec_mse_loss,
+            "codec_ssim_loss": codec_ssim_loss,
+            "codec_gmsd_loss": codec_gmsd_loss,
             "audio_l1_loss": audio_l1_loss,
             "audio_snr_loss": audio_snr_loss,
         }
+
+    def prepare_video_for_loss(self, video):
+        video = video.permute(0, 5, 1, 4, 2, 3).contiguous()
+        B, T, D, C, H, W = video.shape
+        video = video.reshape(B * T * D, C, H, W)
+        video = self.normalizer(video)
+        return video

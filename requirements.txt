@@ -25,6 +25,7 @@ imageio[ffmpeg]
 opencv-python
 scikit-image
 lpips==0.1.4
+piq
 
 # codec
 descript-audio-codec
