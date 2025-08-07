@@ -11,6 +11,8 @@ inference: # metrics that are calculated during inference (eval)
     name: "WER"
   - _target_: src.metrics.PSNRMetric
     name: "PSNR"
+  - _target_: src.metrics.SSIMMetric
+    name: "SSIM"
   - _target_: src.metrics.GMSDMetric
     name: "GMSD"
   - _target_: src.metrics.MSEMetric
