@@ -17,6 +17,7 @@ def reconstruct_codec(
     group_frames_kwargs=None,
     patchify_video_kwargs=None,
     normalize_lensless=False,
+    return_raw=False,
     **kwargs,
 ):
     """
@@ -40,6 +41,7 @@ def reconstruct_codec(
         patchify_video_kwargs (dict | None): configuration for unpatchify_video function.
             See src.lensless.utils.unpatchify_video. Ignored if None.
         normalize_lensless (bool): whether to peak-normalize lensless video.
+        return_raw (bool): also return non-averaged reconstruction.
     Returns:
         recon_lensed_video (Tensor): reconstructed lensed codec video.
             If roi_kwargs are provided, the ROI part is returned.
@@ -49,7 +51,7 @@ def reconstruct_codec(
         min_max_normalizer = MinMaxNormalize(min=0, dim=(0, 4, 5))
         lensless_codec_video = min_max_normalizer.normalize(lensless_codec_video)
 
-    recon_codec_video = recon_model.reconstruct_video(
+    raw_recon_codec_video = recon_model.reconstruct_video(
         lensless_codec_video,
         lensless_psf=lensless_psf,
         roi_kwargs=roi_kwargs,
@@ -57,10 +59,14 @@ def reconstruct_codec(
     )
 
     if group_frames_kwargs is not None:
-        recon_codec_video = ungroup_frames(recon_codec_video, **group_frames_kwargs)
+        raw_recon_codec_video = ungroup_frames(
+            raw_recon_codec_video, **group_frames_kwargs
+        )
 
     min_max_normalizer = MinMaxNormalize(min=None, max=None, dim=(0, 4))
     # use dim = 0, 4 to support multi-object and multi-channel input
+
+    recon_codec_video = raw_recon_codec_video.clone()
 
     if resize_coef > 1:
         # apply avg_pool on H and W
@@ -103,5 +109,8 @@ def reconstruct_codec(
         normalized_frames.append(normalized_frame.unsqueeze(-1))
 
     recon_codec_video = torch.cat(normalized_frames, dim=-1)
+
+    if return_raw:
+        return recon_codec_video, raw_recon_codec_video
 
     return recon_codec_video

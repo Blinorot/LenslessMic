@@ -36,14 +36,18 @@ class Trainer(BaseTrainer):
             metric_funcs = self.metrics["train"]
             self.optimizer.zero_grad()
 
-        recon_codec_video = reconstruct_codec(
+        recon_codec_video, raw_recon_codec_video = reconstruct_codec(
             recon_model=self.model,
-            codec=self.codec,
+            return_raw=True,
             **self.config.reconstruction,
             **batch
         )
         recon_audio = self.codec.video_to_audio(recon_codec_video)
-        outputs = {"recon_codec_video": recon_codec_video, "recon_audio": recon_audio}
+        outputs = {
+            "recon_codec_video": recon_codec_video,
+            "raw_recon_codec_video": raw_recon_codec_video,
+            "recon_audio": recon_audio,
+        }
         batch.update(outputs)
 
         batch["codec_audio"] = self.codec.video_to_audio(batch["lensed_codec_video"])

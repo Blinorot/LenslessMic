@@ -15,11 +15,16 @@ class ReconstructionLoss(nn.Module):
         self,
         codec_mse_coef=1,
         codec_ssim_coef=1,
-        codec_gmsd_coef=1,
+        codec_gmsd_coef=0,
+        raw_codec_ssim_coef=1,
+        raw_codec_l1_coef=1,
         audio_l1_coef=1,
-        audio_snr_coef=1,
+        audio_snr_coef=0,
         ssim_kernel=3,
         ssim_sigma=0.5,
+        raw_ssim_kernel=7,
+        raw_ssim_sigma=1.0,
+        resize_coef=16,
     ):
         super().__init__()
         # codec
@@ -29,6 +34,12 @@ class ReconstructionLoss(nn.Module):
         )
         self.gmsd_loss = GMSDLoss()
 
+        # raw codec
+        self.raw_ssim_loss = SSIMLoss(
+            kernel_size=raw_ssim_kernel, kernel_sigma=raw_ssim_sigma, data_range=1.0
+        )
+        self.raw_l1_loss = nn.L1Loss()
+
         # audio
         self.l1_loss = nn.L1Loss()
         self.snr_loss = PairwiseNegSDR(sdr_type="snr")
@@ -36,14 +47,24 @@ class ReconstructionLoss(nn.Module):
         self.codec_mse_coef = codec_mse_coef
         self.codec_ssim_coef = codec_ssim_coef
         self.codec_gmsd_coef = codec_gmsd_coef
+        self.raw_codec_ssim_coef = raw_codec_ssim_coef
+        self.raw_codec_l1_coef = raw_codec_l1_coef
         self.audio_l1_coef = audio_l1_coef
         self.audio_snr_coef = audio_snr_coef
+
+        self.resize_coef = resize_coef
 
         # video is B x D x H x W x C x T
         self.normalizer = MinMaxNormalize(dim=0)  # across batches
 
     def forward(
-        self, lensed_codec_video, recon_codec_video, codec_audio, recon_audio, **batch
+        self,
+        lensed_codec_video,
+        recon_codec_video,
+        raw_recon_codec_video,
+        codec_audio,
+        recon_audio,
+        **batch
     ):
         # codec losses
 
@@ -71,6 +92,28 @@ class ReconstructionLoss(nn.Module):
         else:
             codec_gmsd_loss = torch.tensor(0, device=codec_mse_loss.device)
 
+        # raw codec losses
+        normalized_raw_recon_codec_video = self.prepare_video_for_loss(
+            raw_recon_codec_video
+        )
+        normalized_raw_lensed_codec_video = nn.functional.interpolate(
+            normalized_lensed_codec_video, scale_factor=self.resize_coef, mode="nearest"
+        )
+
+        if self.raw_codec_ssim_coef > 0:
+            raw_codec_ssim_loss = self.raw_ssim_loss(
+                normalized_raw_recon_codec_video, normalized_raw_lensed_codec_video
+            )
+        else:
+            raw_codec_ssim_loss = torch.tensor(0, device=codec_mse_loss.device)
+
+        if self.raw_codec_l1_coef > 0:
+            raw_codec_l1_loss = self.raw_l1_loss(
+                normalized_raw_recon_codec_video, normalized_raw_lensed_codec_video
+            )
+        else:
+            raw_codec_l1_loss = torch.tensor(0, device=codec_mse_loss.device)
+
         # audio losses
 
         if self.audio_l1_coef > 0:
@@ -89,6 +132,8 @@ class ReconstructionLoss(nn.Module):
             self.codec_mse_coef * codec_mse_loss
             + self.codec_ssim_coef * codec_ssim_loss
             + self.codec_gmsd_coef * codec_gmsd_loss
+            + self.raw_codec_ssim_coef * raw_codec_ssim_loss
+            + self.raw_codec_l1_coef * raw_codec_l1_loss
             + self.audio_l1_coef * audio_l1_loss
             + self.audio_snr_coef * audio_snr_loss
         )
@@ -97,6 +142,8 @@ class ReconstructionLoss(nn.Module):
             "codec_mse_loss": codec_mse_loss,
             "codec_ssim_loss": codec_ssim_loss,
             "codec_gmsd_loss": codec_gmsd_loss,
+            "raw_codec_ssim_loss": raw_codec_ssim_loss,
+            "raw_codec_l1_loss": raw_codec_l1_loss,
             "audio_l1_loss": audio_l1_loss,
             "audio_snr_loss": audio_snr_loss,
         }
