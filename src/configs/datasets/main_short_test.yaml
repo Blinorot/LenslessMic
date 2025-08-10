@@ -3,6 +3,7 @@ train:
   max_audio_length: 3
   part: "train-clean-100"
   roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
   lensless_tag: "measurement" # lensless dir name is f"lensless_{lensless_tag}"
   instance_transforms: ${transforms.instance_transforms.train}
   sim_psf_config: ${psf}
@@ -12,6 +13,7 @@ test:
   max_audio_length: 3
   part: "test-clean"
   roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
   lensless_tag: "measurement"
   instance_transforms: ${transforms.instance_transforms.inference}
   sim_psf_config: ${psf}

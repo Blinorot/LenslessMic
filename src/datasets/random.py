@@ -19,6 +19,7 @@ class RandomDataset(BaseDataset):
     def __init__(
         self,
         part,
+        codec_name,
         length=200,
         data_length=150,
         dummy_audio_length=48000,
@@ -32,30 +33,29 @@ class RandomDataset(BaseDataset):
         self._data_dir = data_dir
         self.dummy_audio_length = dummy_audio_length
 
-        index = self._get_or_load_index(part, length, data_length)
+        assert codec_name is not None, "Provide codec_name"
+        index = self._get_or_load_index(part, codec_name, length, data_length)
 
-        super().__init__(index, *args, **kwargs)
+        super().__init__(index, codec_name=codec_name, *args, **kwargs)
 
-        assert part == self.codec_name, "Partition name must match codec_name"
-
-    def _get_or_load_index(self, part, length, data_length):
-        index_path = self._data_dir / f"{part}_index.json"
+    def _get_or_load_index(self, part, codec_name, length, data_length):
+        index_path = self._data_dir / f"{part}_{codec_name}_index.json"
         if index_path.exists():
             with index_path.open() as f:
                 index = json.load(f)
         else:
-            index = self._create_index(part, length, data_length)
+            index = self._create_index(part, codec_name, length, data_length)
             with index_path.open("w") as f:
                 json.dump(index, f, indent=2)
         return index
 
-    def _create_index(self, part, length, data_length):
+    def _create_index(self, part, codec_name, length, data_length):
         torch.manual_seed(1)
 
         normalizer = MinMaxNormalize(dim=0)
 
         index = []
-        split_dir = self._data_dir / part
+        split_dir = self._data_dir / part / codec_name
         lensed_dir = split_dir / "lensed"
 
         if lensed_dir.exists():
@@ -79,7 +79,7 @@ class RandomDataset(BaseDataset):
 
         lensed_dir.mkdir(exist_ok=True, parents=True)
 
-        image_size = int(part[:2])
+        image_size = int(codec_name[:2])
 
         for i in tqdm(
             range(length),
@@ -109,5 +109,5 @@ class RandomDataset(BaseDataset):
 
 if __name__ == "__main__":
     # create dataset
-    dataset = RandomDataset("16x16_130_16khz")
-    dataset = RandomDataset("32x32_120_16khz_original")
+    dataset = RandomDataset("train", "16x16_130_16khz")
+    dataset = RandomDataset("train", "32x32_120_16khz_original")

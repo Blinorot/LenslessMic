@@ -168,7 +168,9 @@ class BaseDataset(Dataset):
 
             filename = lensed_codec_video_path.stem
             lensless_video_dir = (
-                lensed_codec_video_path.parents[1] / f"lensless_{self.lensless_tag}"
+                lensed_codec_video_path.parents[1]
+                / f"{self.codec_name}"
+                / f"lensless_{self.lensless_tag}"
             )
         else:
             with torch.no_grad():
