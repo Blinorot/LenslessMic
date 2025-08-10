@@ -118,7 +118,10 @@ class BaseDataset(Dataset):
         """
         data_dict = self._index[ind]
         audio_path = data_dict["audio_path"]
-        audio = self.load_audio(audio_path)
+        if audio_path == "":  # special case for random dataset
+            audio = torch.zeros(self.dummy_audio_length)
+        else:
+            audio = self.load_audio(audio_path)
         text = data_dict["text"]
 
         instance_data = {
@@ -128,7 +131,7 @@ class BaseDataset(Dataset):
         }
 
         if self.lensless_tag is not None and self.codec is not None:
-            lensless_dict = self.load_lensless(audio, audio_path)
+            lensless_dict = self.load_lensless(audio, **data_dict)
             instance_data.update(**lensless_dict)
 
         instance_data = self.preprocess_data(instance_data)
@@ -141,18 +144,52 @@ class BaseDataset(Dataset):
         """
         return len(self._index)
 
-    def load_lensless(self, audio, audio_path):
-        with torch.no_grad():
-            lensed_codec_video = self.codec.audio_to_video(audio.unsqueeze(0))[0]
+    def prepare_codec_video(self, codec_video_path):
+        codec_video = load_grayscale_video_ffv1(str(codec_video_path))
 
-        audio_path = Path(audio_path)
-        filename = audio_path.stem
-        video_dir = audio_path.parents[1] / f"{self.codec_name}" / "lensed"
-        lensless_video_dir = (
-            audio_path.parents[1]
-            / f"{self.codec_name}"
-            / f"lensless_{self.lensless_tag}"
-        )
+        codec_video = torch.from_numpy(codec_video)
+
+        codec_video = codec_video.to(torch.float32)
+        codec_video = codec_video / 255
+
+        codec_video = codec_video.permute(1, 2, 0).contiguous()  # HxWxT
+        codec_video = codec_video.unsqueeze(0)  # add plane
+        codec_video = codec_video.unsqueeze(-2)  # add channel
+        return codec_video
+
+    def load_lensless(self, audio, audio_path, **data_dict):
+        if audio_path == "":
+            lensed_codec_video_path = data_dict["lensed_codec_video_path"]
+            lensed_codec_video = self.prepare_codec_video(lensed_codec_video_path)
+
+            codec_length = lensed_codec_video.shape[-1]
+            min_vals = torch.zeros((1, 1, 1, 1, 1, codec_length))
+            max_vals = torch.ones((1, 1, 1, 1, 1, codec_length))
+
+            filename = lensed_codec_video_path.stem
+            lensless_video_dir = (
+                lensed_codec_video_path.parents[1] / f"lensless_{self.lensless_tag}"
+            )
+        else:
+            with torch.no_grad():
+                lensed_codec_video = self.codec.audio_to_video(audio.unsqueeze(0))[0]
+
+            audio_path = Path(audio_path)
+            filename = audio_path.stem
+            video_dir = audio_path.parents[1] / f"{self.codec_name}" / "lensed"
+            lensless_video_dir = (
+                audio_path.parents[1]
+                / f"{self.codec_name}"
+                / f"lensless_{self.lensless_tag}"
+            )
+
+            min_vals_path = video_dir / f"{filename}_min_vals.pth"
+            max_vals_path = video_dir / f"{filename}_max_vals.pth"
+
+            min_vals_list = torch.load(min_vals_path, map_location="cpu")
+            min_vals = torch.stack(min_vals_list, dim=-1)
+            max_vals_list = torch.load(max_vals_path, map_location="cpu")
+            max_vals = torch.stack(max_vals_list, dim=-1)
 
         lensless_path = lensless_video_dir / f"{filename}.mkv"
         lensless_mask_label = lensless_video_dir / f"{filename}.txt"
@@ -173,26 +210,7 @@ class BaseDataset(Dataset):
         else:
             lensless_psf = self.psf.clone()
 
-        min_vals_path = video_dir / f"{filename}_min_vals.pth"
-        max_vals_path = video_dir / f"{filename}_max_vals.pth"
-
-        min_vals_list = torch.load(min_vals_path, map_location="cpu")
-        min_vals = torch.stack(min_vals_list, dim=-1)
-        max_vals_list = torch.load(max_vals_path, map_location="cpu")
-        max_vals = torch.stack(max_vals_list, dim=-1)
-
-        lensless_codec_video = load_grayscale_video_ffv1(str(lensless_path))
-
-        lensless_codec_video = torch.from_numpy(lensless_codec_video)
-
-        lensless_codec_video = lensless_codec_video.to(torch.float32)
-        lensless_codec_video = lensless_codec_video / 255
-
-        lensless_codec_video = lensless_codec_video.permute(
-            1, 2, 0
-        ).contiguous()  # HxWxT
-        lensless_codec_video = lensless_codec_video.unsqueeze(0)  # add plane
-        lensless_codec_video = lensless_codec_video.unsqueeze(-2)  # add channel
+        lensless_codec_video = self.prepare_codec_video(lensless_path)
 
         final_lensless_dict = {
             "lensed_codec_video": lensed_codec_video,
