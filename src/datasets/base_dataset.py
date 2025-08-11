@@ -172,9 +172,6 @@ class BaseDataset(Dataset):
                 / f"lensless_{self.lensless_tag}"
             )
         else:
-            with torch.no_grad():
-                lensed_codec_video = self.codec.audio_to_video(audio.unsqueeze(0))[0]
-
             audio_path = Path(audio_path)
             filename = audio_path.stem
             video_dir = audio_path.parents[1] / f"{self.codec_name}" / "lensed"
@@ -183,6 +180,15 @@ class BaseDataset(Dataset):
                 / f"{self.codec_name}"
                 / f"lensless_{self.lensless_tag}"
             )
+
+            lensed_path = video_dir / f"{filename}.mkv"
+            if lensed_path.exists():
+                lensed_codec_video = self.prepare_codec_video(lensed_path)
+            else:
+                with torch.no_grad():
+                    lensed_codec_video = self.codec.audio_to_video(audio.unsqueeze(0))[
+                        0
+                    ]
 
             min_vals_path = video_dir / f"{filename}_min_vals.pth"
             max_vals_path = video_dir / f"{filename}_max_vals.pth"
