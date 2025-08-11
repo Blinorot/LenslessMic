@@ -68,15 +68,17 @@ class ReconstructionLoss(nn.Module):
     ):
         # codec losses
 
-        if self.codec_mse_coef > 0:
-            codec_mse_loss = self.mse_loss(recon_codec_video, lensed_codec_video)
-        else:
-            codec_mse_loss = torch.tensor(0, device=recon_codec_video.device)
-
-        # now with normalized video
+        # normalize video to stabilize training
         # merge batch and T
         normalized_lensed_codec_video = self.prepare_video_for_loss(lensed_codec_video)
         normalized_recon_codec_video = self.prepare_video_for_loss(recon_codec_video)
+
+        if self.codec_mse_coef > 0:
+            codec_mse_loss = self.mse_loss(
+                normalized_recon_codec_video, normalized_lensed_codec_video
+            )
+        else:
+            codec_mse_loss = torch.tensor(0, device=recon_codec_video.device)
 
         if self.codec_ssim_coef > 0:
             codec_ssim_loss = self.ssim_loss(
