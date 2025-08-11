@@ -168,8 +168,7 @@ class BaseDataset(Dataset):
 
             filename = lensed_codec_video_path.stem
             lensless_video_dir = (
-                lensed_codec_video_path.parents[1]
-                / f"{self.codec_name}"
+                lensed_codec_video_path.parents[1]  # codec_name is built-in
                 / f"lensless_{self.lensless_tag}"
             )
         else:
