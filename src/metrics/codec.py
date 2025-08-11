@@ -61,7 +61,16 @@ class PSNRMetric(CodecMetric):
 
 
 class MSEMetric(CodecMetric):
+    def __init__(self, normalized, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.normalized = normalized
+
     def __call__(self, lensed_codec_video, recon_codec_video, **kwargs):
-        return torch.nn.functional.mse_loss(
-            recon_codec_video.detach(), lensed_codec_video.detach()
-        ).item()
+        recon = recon_codec_video.detach()
+        lensed = lensed_codec_video.detach()
+
+        if self.normalized:
+            recon = self.prepare_video_for_metric(recon)
+            lensed = self.prepare_video_for_metric(lensed)
+
+        return torch.nn.functional.mse_loss(recon, lensed).item()

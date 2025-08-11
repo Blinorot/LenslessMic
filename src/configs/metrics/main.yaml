@@ -17,3 +17,7 @@ inference: # metrics that are calculated during inference (eval)
     name: "GMSD"
   - _target_: src.metrics.MSEMetric
     name: "MSE"
+    normalized: False
+  - _target_: src.metrics.MSEMetric
+    name: "NormMSE"
+    normalized: True
