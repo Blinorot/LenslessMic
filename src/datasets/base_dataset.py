@@ -159,7 +159,7 @@ class BaseDataset(Dataset):
 
     def load_lensless(self, audio, audio_path, **data_dict):
         if audio_path == "":
-            lensed_codec_video_path = data_dict["lensed_codec_video_path"]
+            lensed_codec_video_path = Path(data_dict["lensed_codec_video_path"])
             lensed_codec_video = self.prepare_codec_video(lensed_codec_video_path)
 
             codec_length = lensed_codec_video.shape[-1]
