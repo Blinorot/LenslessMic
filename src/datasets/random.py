@@ -34,28 +34,29 @@ class RandomDataset(BaseDataset):
         self.dummy_audio_length = dummy_audio_length
 
         assert codec_name is not None, "Provide codec_name"
-        index = self._get_or_load_index(part, codec_name, length, data_length)
+        codec_size = codec_name[:5]
+        index = self._get_or_load_index(part, codec_size, length, data_length)
 
         super().__init__(index, codec_name=codec_name, *args, **kwargs)
 
-    def _get_or_load_index(self, part, codec_name, length, data_length):
-        index_path = self._data_dir / f"{part}_{codec_name}_index.json"
+    def _get_or_load_index(self, part, codec_size, length, data_length):
+        index_path = self._data_dir / f"{part}_{codec_size}_index.json"
         if index_path.exists():
             with index_path.open() as f:
                 index = json.load(f)
         else:
-            index = self._create_index(part, codec_name, length, data_length)
+            index = self._create_index(part, codec_size, length, data_length)
             with index_path.open("w") as f:
                 json.dump(index, f, indent=2)
         return index
 
-    def _create_index(self, part, codec_name, length, data_length):
+    def _create_index(self, part, codec_size, length, data_length):
         torch.manual_seed(1)
 
         normalizer = MinMaxNormalize(dim=0)
 
         index = []
-        split_dir = self._data_dir / part / codec_name
+        split_dir = self._data_dir / part / codec_size
         lensed_dir = split_dir / "lensed"
 
         if lensed_dir.exists():
@@ -79,7 +80,7 @@ class RandomDataset(BaseDataset):
 
         lensed_dir.mkdir(exist_ok=True, parents=True)
 
-        image_size = int(codec_name[:2])
+        image_size = int(codec_size[:2])
 
         for i in tqdm(
             range(length),
