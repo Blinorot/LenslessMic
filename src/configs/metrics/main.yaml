@@ -2,6 +2,11 @@ device: "auto"
 train:
   - _target_: src.metrics.SISDRMetric
     name: "SISDR"
+  - _target_: src.metrics.PSNRMetric
+    name: "PSNR"
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-all"
+    codebook_index: "all"
 inference: # metrics that are calculated during inference (eval)
   - _target_: src.metrics.SISDRMetric
     name: "SISDR"
