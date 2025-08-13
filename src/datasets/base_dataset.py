@@ -181,14 +181,10 @@ class BaseDataset(Dataset):
                 / f"lensless_{self.lensless_tag}"
             )
 
-            lensed_path = video_dir / f"{filename}.mkv"
-            if lensed_path.exists():
-                lensed_codec_video = self.prepare_codec_video(lensed_path)
-            else:
-                with torch.no_grad():
-                    lensed_codec_video = self.codec.audio_to_video(audio.unsqueeze(0))[
-                        0
-                    ]
+            # saved lensed is normalized
+            # we want non-normalized lensed
+            with torch.no_grad():
+                lensed_codec_video = self.codec.audio_to_video(audio.unsqueeze(0))[0]
 
             min_vals_path = video_dir / f"{filename}_min_vals.pth"
             max_vals_path = video_dir / f"{filename}_max_vals.pth"
