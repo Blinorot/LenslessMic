@@ -22,6 +22,18 @@ loss_function:
   raw_codec_l1_coef: 1
   audio_l1_coef: 1
   audio_snr_coef: 0
+  audio_stft_coef: 0
+  audio_mel_coef: 0
+  audio_stft_config:
+    window_lengths: [2048, 512]
+  audio_mel_config:
+    n_mels: [5, 10, 20, 40, 80, 160, 320]
+    window_lengths: [32, 64, 128, 256, 512, 1024, 2048]
+    mel_fmin: [0, 0, 0, 0, 0, 0, 0]
+    mel_fmax: [null, null, null, null, null, null, null]
+    pow: 1.0
+    clamp_eps: 1.0e-5
+    mag_weight: 0.0
   resize_coef: ${reconstruction.resize_coef}
 trainer:
   log_step: 50
@@ -31,7 +43,7 @@ trainer:
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
   override: False # if True, will override the previous run with the same name
-  monitor: "max test_SISDR" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
+  monitor: "max test_PSNR" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"

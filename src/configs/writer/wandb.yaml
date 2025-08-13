@@ -3,7 +3,16 @@ project_name: "lenslessmic"
 entity: null
 run_name: "testing"
 mode: "online"
-loss_names: ["loss", "codec_mse_loss", "codec_ssim_loss", "raw_codec_ssim_loss", "raw_codec_l1_loss", "audio_l1_loss"] # which losses to log (useful for multi-loss tasks, s.a. GANs)
+loss_names: # which losses to log (useful for multi-loss tasks, s.a. GANs)
+  - "loss"
+  - "codec_mse_loss"
+  - "codec_ssim_loss"
+  - "raw_codec_ssim_loss"
+  - "raw_codec_l1_loss"
+  - "audio_l1_loss"
+  - "audio_sisdr_loss"
+  - "audio_stft_loss"
+  - "audio_mel_loss"
 log_checkpoints: False # set to True if you want to log save_dir with checkpoints to W&B
 id_length: 8 # length of the run_id
 

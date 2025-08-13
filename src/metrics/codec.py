@@ -74,3 +74,22 @@ class MSEMetric(CodecMetric):
             lensed = self.prepare_video_for_metric(lensed)
 
         return torch.nn.functional.mse_loss(recon, lensed).item()
+
+
+class QuantizationMatchMetric(CodecMetric):
+    def __init__(self, codebook_index, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.codebook_index = codebook_index
+
+    def __call__(self, codec_codes, recon_codes, **kwargs):
+        recon = recon_codes.detach()
+        lensed = codec_codes.detach()
+
+        if self.codebook_index == "all":
+            result = (recon == lensed).to(torch.float32).mean()
+        else:
+            recon = recon[:, self.codebook_index]
+            lensed = lensed[:, self.codebook_index]
+            result = (recon == lensed).to(torch.float32).mean()
+
+        return result.item()

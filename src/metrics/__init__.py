@@ -1,2 +1,15 @@
-from src.metrics.audio import SISDRMetric, STOIMetric, WERMetric
-from src.metrics.codec import GMSDMetric, MSEMetric, PSNRMetric, SSIMMetric
+from src.metrics.audio import (
+    MelMetric,
+    PESQMetric,
+    SISDRMetric,
+    STFTMetric,
+    STOIMetric,
+    WERMetric,
+)
+from src.metrics.codec import (
+    GMSDMetric,
+    MSEMetric,
+    PSNRMetric,
+    QuantizationMatchMetric,
+    SSIMMetric,
+)

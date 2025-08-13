@@ -2,7 +2,8 @@ import torch
 from piq import GMSDLoss, SSIMLoss
 from torch import nn
 
-from src.loss.snr import PairwiseNegSDR
+from src.loss.sisdr import SISDRLoss
+from src.loss.timefreqloss import MelSpectrogramLoss, MultiScaleSTFTLoss
 from src.transforms import MinMaxNormalize
 
 
@@ -19,12 +20,16 @@ class ReconstructionLoss(nn.Module):
         raw_codec_ssim_coef=1,
         raw_codec_l1_coef=1,
         audio_l1_coef=1,
-        audio_snr_coef=0,
+        audio_sisdr_coef=0,
+        audio_stft_coef=0,
+        audio_mel_coef=0,
         ssim_kernel=3,
         ssim_sigma=0.5,
         raw_ssim_kernel=7,
         raw_ssim_sigma=1.0,
         resize_coef=16,
+        audio_stft_config={},
+        audio_mel_config={},
     ):
         super().__init__()
         # codec
@@ -42,7 +47,9 @@ class ReconstructionLoss(nn.Module):
 
         # audio
         self.l1_loss = nn.L1Loss()
-        self.snr_loss = PairwiseNegSDR(sdr_type="snr")
+        self.sisdr_loss = SISDRLoss()
+        self.stft_loss = MultiScaleSTFTLoss(**audio_stft_config)
+        self.mel_loss = MelSpectrogramLoss(**audio_mel_config)
 
         self.codec_mse_coef = codec_mse_coef
         self.codec_ssim_coef = codec_ssim_coef
@@ -50,7 +57,9 @@ class ReconstructionLoss(nn.Module):
         self.raw_codec_ssim_coef = raw_codec_ssim_coef
         self.raw_codec_l1_coef = raw_codec_l1_coef
         self.audio_l1_coef = audio_l1_coef
-        self.audio_snr_coef = audio_snr_coef
+        self.audio_sisdr_coef = audio_sisdr_coef
+        self.audio_stft_coef = audio_stft_coef
+        self.audio_mel_coef = audio_mel_coef
 
         self.resize_coef = resize_coef
 
@@ -123,10 +132,22 @@ class ReconstructionLoss(nn.Module):
         else:
             audio_l1_loss = torch.tensor(0, device=codec_mse_loss.device)
 
-        if self.audio_snr_coef > 0:
-            audio_snr_loss = self.snr_loss(recon_audio[:, 0, :], codec_audio[:, 0, :])
+        if self.audio_stft_coef > 0:
+            audio_stft_loss = self.stft_loss(recon_audio, codec_audio)
         else:
-            audio_snr_loss = torch.tensor(0, device=codec_mse_loss.device)
+            audio_stft_loss = torch.tensor(0, device=codec_mse_loss.device)
+
+        if self.audio_mel_coef > 0:
+            audio_mel_loss = self.mel_loss(recon_audio, codec_audio)
+        else:
+            audio_mel_loss = torch.tensor(0, device=codec_mse_loss.device)
+
+        if self.audio_sisdr_coef > 0:
+            audio_sisdr_loss = self.sisdr_loss(
+                references=codec_audio, estimates=recon_audio
+            )
+        else:
+            audio_sisdr_loss = torch.tensor(0, device=codec_mse_loss.device)
 
         # total loss
 
@@ -137,7 +158,9 @@ class ReconstructionLoss(nn.Module):
             + self.raw_codec_ssim_coef * raw_codec_ssim_loss
             + self.raw_codec_l1_coef * raw_codec_l1_loss
             + self.audio_l1_coef * audio_l1_loss
-            + self.audio_snr_coef * audio_snr_loss
+            + self.audio_sisdr_coef * audio_sisdr_loss
+            + self.audio_stft_coef * audio_stft_loss
+            + self.audio_mel_coef * audio_mel_loss
         )
         return {
             "loss": loss,
@@ -147,7 +170,9 @@ class ReconstructionLoss(nn.Module):
             "raw_codec_ssim_loss": raw_codec_ssim_loss,
             "raw_codec_l1_loss": raw_codec_l1_loss,
             "audio_l1_loss": audio_l1_loss,
-            "audio_snr_loss": audio_snr_loss,
+            "audio_sisdr_loss": audio_sisdr_loss,
+            "audio_stft_loss": audio_stft_loss,
+            "audio_mel_loss": audio_mel_loss,
         }
 
     def prepare_video_for_loss(self, video):

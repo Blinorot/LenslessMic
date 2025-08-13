@@ -9,6 +9,31 @@ inference: # metrics that are calculated during inference (eval)
     name: "STOI"
   - _target_: src.metrics.WERMetric
     name: "WER"
+  - _target_: src.metrics.PESQMetric
+    name: "PESQ"
+  - _target_: src.metrics.MelMetric
+    name: "Mel"
+    audio_mel_config:
+      n_mels: [5, 10, 20, 40, 80, 160, 320]
+      window_lengths: [32, 64, 128, 256, 512, 1024, 2048]
+      mel_fmin: [0, 0, 0, 0, 0, 0, 0]
+      mel_fmax: [null, null, null, null, null, null, null]
+      pow: 1.0
+      clamp_eps: 1.0e-5
+      mag_weight: 0.0
+  - _target_: src.metrics.STFTMetric
+    name: "STFT"
+    audio_stft_config:
+      window_lengths: [2048, 512]
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-all"
+    codebook_index: "all"
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-1"
+    codebook_index: 1
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-2"
+    codebook_index: 2
   - _target_: src.metrics.PSNRMetric
     name: "PSNR"
   - _target_: src.metrics.SSIMMetric

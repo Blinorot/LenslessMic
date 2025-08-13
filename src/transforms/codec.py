@@ -87,20 +87,26 @@ class CodecEncoderDecoder(nn.Module):
         codec_video = codec_video.unsqueeze(1).unsqueeze(-2)
         return codec_video
 
-    def video_to_audio(self, codec_video):
+    def video_to_audio(self, codec_video, return_codes=False):
         """
         Converts video to audio representation.
         Args:
             codec_video (Tensor): latent representation of audio
                 (B x 1 x sqrt(D) x sqrt(D) x 1 x T_latent).
+            return_codes (bool): if True, return codes.
         Returns:
             audio (Tensor): audio in [-1, 1] (B x 1 x T).
                 Note: T might be a bit shorter than in the original audio.
+            codes (Tensor): BxNxT -- codebook indices for each frame.
         """
         image_shape = codec_video.shape[-3]
         latent_audio = codec_video.reshape(
             codec_video.shape[0], image_shape**2, codec_video.shape[-1]
         )
-        z, _, _, _, _ = self.codec.quantizer(latent_audio, n_quantizers=None)
+        z, codes, _, _, _ = self.codec.quantizer(latent_audio, n_quantizers=None)
         audio = self.codec.decode(z)
+
+        if return_codes:
+            return audio, codes
+
         return audio

@@ -42,15 +42,21 @@ class Trainer(BaseTrainer):
             **self.config.reconstruction,
             **batch
         )
-        recon_audio = self.codec.video_to_audio(recon_codec_video)
+        recon_audio, recon_codes = self.codec.video_to_audio(
+            recon_codec_video, return_codes=True
+        )
         outputs = {
             "recon_codec_video": recon_codec_video,
             "raw_recon_codec_video": raw_recon_codec_video,
             "recon_audio": recon_audio,
+            "recon_codes": recon_codes,
         }
         batch.update(outputs)
 
-        batch["codec_audio"] = self.codec.video_to_audio(batch["lensed_codec_video"])
+        codec_audio, codec_codes = self.codec.video_to_audio(
+            batch["lensed_codec_video"], return_codes=True
+        )
+        batch.update({"codec_audio": codec_audio, "codec_codes": codec_codes})
 
         all_losses = self.criterion(**batch)
         batch.update(all_losses)
