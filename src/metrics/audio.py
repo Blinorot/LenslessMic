@@ -50,7 +50,7 @@ class STOIMetric(BaseMetric):
     def __call__(self, audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
         return self.metric(
             recon_audio.detach(),
-            audio[..., recon_audio.shape[-1]].detach(),
+            audio[..., : recon_audio.shape[-1]].detach(),
             fs=self.sampling_rate,
         ).item()
 
@@ -65,7 +65,7 @@ class PESQMetric(BaseMetric):
     def __call__(self, audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
         return self.metric(
             recon_audio.detach(),
-            audio[..., recon_audio.shape[-1]].detach(),
+            audio[..., : recon_audio.shape[-1]].detach(),
             fs=self.sampling_rate,
             mode=self.mode,
         ).item()
