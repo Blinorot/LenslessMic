@@ -3,6 +3,7 @@ import inspect
 import torch
 from torch import nn
 
+from src.transforms.xcodec.soundstream_semantic import SoundStream
 from src.utils.io_utils import ROOT_PATH
 
 
@@ -46,13 +47,18 @@ class CodecEncoderDecoder(nn.Module):
             for k in list(codec_kwargs["kwargs"].keys()):
                 if k not in class_keys:
                     codec_kwargs["kwargs"].pop(k)
-        else:
+        elif codec_kwargs is None:
             error = "Codec kwargs are not provided."
             error += "Provide kwargs or use checkpoint with metadata field."
             raise ValueError(error)
 
+        if "state_dict" in checkpoint.keys():
+            checkpoint = checkpoint["state_dict"]
+        if "kwargs" not in codec_kwargs.keys():
+            codec_kwargs = {"kwargs": codec_kwargs}
+
         self.codec = codec_cls(**codec_kwargs["kwargs"])
-        self.codec.load_state_dict(checkpoint["state_dict"])
+        self.codec.load_state_dict(checkpoint)
         self.codec.metadata = codec_kwargs
         self.codec_name = codec_name
 
@@ -78,6 +84,9 @@ class CodecEncoderDecoder(nn.Module):
             codec_video (Tensor): latent representation of audio
                 (B x 1 x sqrt(D) x sqrt(D) x 1 x T_latent).
         """
+        if isinstance(self.codec, SoundStream):
+            return self.codec.audio_to_video(audio)
+
         latent_audio = self.codec.encoder(audio)
         image_shape = int(latent_audio.shape[1] ** 0.5)
         codec_video = latent_audio.reshape(
@@ -99,6 +108,9 @@ class CodecEncoderDecoder(nn.Module):
                 Note: T might be a bit shorter than in the original audio.
             codes (Tensor): BxNxT -- codebook indices for each frame.
         """
+        if isinstance(self.codec, SoundStream):
+            return self.codec.video_to_audio(codec_video, return_codes)
+
         image_shape = codec_video.shape[-3]
         latent_audio = codec_video.reshape(
             codec_video.shape[0], image_shape**2, codec_video.shape[-1]

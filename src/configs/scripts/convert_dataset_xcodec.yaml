@@ -1,0 +1,15 @@
+dataset:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  max_audio_length: 5
+  codec_name: ${codec.codec_name}
+codec:
+  _target_: src.transforms.CodecEncoderDecoder
+  codec_cls: ${resolve_class:src.transforms.xcodec.soundstream_semantic.SoundStream}
+  codec_weights_path: data/xcodec_exps/${codec.codec_name}/weights.pth
+  codec_add_root_path: True
+  codec_kwargs:
+    sample_rate: 16000
+  codec_name: "32x32_80_16khz_xcodec_hubert_general_audio"
+  eval_mode: True
+  freeze_weights: True
