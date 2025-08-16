@@ -1,6 +1,11 @@
+from pathlib import Path
+
+import safetensors
 import torch
+import torchaudio
 from tqdm.auto import tqdm
 
+from src.lensless.pipeline import reconstruct_codec
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -17,10 +22,13 @@ class Inferencer(BaseTrainer):
     def __init__(
         self,
         model,
+        codec,
         config,
         device,
         dataloaders,
         save_path,
+        dataset_tag,
+        model_tag,
         metrics=None,
         batch_transforms=None,
         skip_model_load=False,
@@ -30,12 +38,15 @@ class Inferencer(BaseTrainer):
 
         Args:
             model (nn.Module): PyTorch model.
+            codec (nn.Module): Audio codec.
             config (DictConfig): run config containing inferencer config.
             device (str): device for tensors and model.
             dataloaders (dict[DataLoader]): dataloaders for different
                 sets of data.
             save_path (str): path to save model predictions and other
                 information.
+            dataset_tag (str): subdir name set to dataset tag for saving.
+            model_tag (str): subdir name set to model tag for saving.
             metrics (dict): dict with the definition of metrics for
                 inference (metrics[inference]). Each metric is an instance
                 of src.metrics.BaseMetric.
@@ -57,6 +68,7 @@ class Inferencer(BaseTrainer):
         self.device = device
 
         self.model = model
+        self.codec = codec
         self.batch_transforms = batch_transforms
 
         # define dataloaders
@@ -64,7 +76,8 @@ class Inferencer(BaseTrainer):
 
         # path definition
 
-        self.save_path = save_path
+        self.save_path = save_path / dataset_tag
+        self.model_tag = model_tag
 
         # define metrics
         self.metrics = metrics
@@ -74,7 +87,8 @@ class Inferencer(BaseTrainer):
                 writer=None,
             )
         else:
-            self.evaluation_metrics = None
+            self.evaluation_metrics = MetricTracker()
+            self.metrics = {"inference": []}
 
         if not skip_model_load:
             # init model
@@ -119,8 +133,27 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        recon_codec_video = reconstruct_codec(
+            recon_model=self.model,
+            return_raw=False,
+            **self.config.reconstruction,
+            **batch,
+        )
+        recon_audio, recon_codes = self.codec.video_to_audio(
+            recon_codec_video, return_codes=True
+        )
+        outputs = {
+            "recon_codec_video": recon_codec_video,
+            # "raw_recon_codec_video": raw_recon_codec_video,
+            "recon_audio": recon_audio,
+            "recon_codes": recon_codes,
+        }
         batch.update(outputs)
+
+        # codec_audio, codec_codes = self.codec.video_to_audio(
+        #     batch["lensed_codec_video"], return_codes=True
+        # )
+        # batch.update({"codec_audio": codec_audio, "codec_codes": codec_codes})
 
         if metrics is not None:
             for met in self.metrics["inference"]:
@@ -129,26 +162,37 @@ class Inferencer(BaseTrainer):
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
 
-        batch_size = batch["logits"].shape[0]
-        current_id = batch_idx * batch_size
+        batch_size = batch["recon_codec_video"].shape[0]
 
         for i in range(batch_size):
             # clone because of
             # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
+            recon_codec_video = batch["recon_codec_video"][i].clone()
+            recon_codes = batch["recon_codes"][i].clone()
+            recon_audio = batch["recon_audio"][i].clone()
+            # peak-normalize to avoid clipping
+            recon_audio = recon_audio / recon_audio.abs().max()
 
-            output_id = current_id + i
+            audio_path = Path(batch["audio_path"][i]).resolve()
 
             output = {
-                "pred_label": pred_label,
-                "label": label,
+                "recon_codec_video": recon_codec_video.detach().cpu(),
+                "recon_codes": recon_codes.detach().cpu(),
             }
+            filename = audio_path.stem
 
             if self.save_path is not None:
                 # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                save_dir = self.save_path / part / self.model_tag
+                safetensors.torch.save_file(
+                    output, save_dir / "lensed" / f"{filename}.safetensors"
+                )
+                sr = self.codec.codec.metadata["kwargs"]["sample_rate"]
+                torchaudio.save(
+                    save_dir / "audio" / f"{filename}.wav",
+                    recon_audio.detach().cpu(),
+                    sample_rate=sr,
+                )
 
         return batch
 
@@ -170,7 +214,9 @@ class Inferencer(BaseTrainer):
 
         # create Save dir
         if self.save_path is not None:
-            (self.save_path / part).mkdir(exist_ok=True, parents=True)
+            save_dir = self.save_path / part / self.model_tag
+            (save_dir / "lensed").mkdir(exist_ok=True, parents=True)
+            (save_dir / "audio").mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(

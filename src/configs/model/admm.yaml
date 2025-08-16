@@ -2,7 +2,7 @@ _target_: src.model.LenslessWrapper
 use_loader: false
 loader_kwargs: null
 use_batch_video_version: false
-freeze_weights: false
+freeze_weights: True
 
 # define psf for initialization
 psf_path: data/digicam_psf/SIM_psf.png
@@ -12,7 +12,7 @@ psf_loader_kwargs:
 grayscale_psf: true
 
 # define lensless model
-recon_name: ADMM
+recon_name: UnrolledADMM
 recon_kwargs:
   # Number of iterations
   n_iter: 10

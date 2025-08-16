@@ -166,30 +166,33 @@ class LenslessWrapper(nn.Module):
         result_info = result_info + f"\nAll parameters: {all_parameters}"
 
         if hasattr(self.recon, "psf_network_model"):
-            psf_network_parameters = sum(
-                [p.numel() for p in self.recon.psf_network_model.parameters()]
-            )
-            result_info = (
-                result_info + f"\nPSF Network parameters: {psf_network_parameters}"
-            )
+            if self.recon.psf_network_model is not None:
+                psf_network_parameters = sum(
+                    [p.numel() for p in self.recon.psf_network_model.parameters()]
+                )
+                result_info = (
+                    result_info + f"\nPSF Network parameters: {psf_network_parameters}"
+                )
 
         if hasattr(self.recon, "pre_process_model"):
-            pre_process_parameters = sum(
-                [p.numel() for p in self.recon.pre_process_model.parameters()]
-            )
-            result_info = (
-                result_info
-                + f"\nPre Process Network parameters: {pre_process_parameters}"
-            )
+            if self.recon.pre_process_model is not None:
+                pre_process_parameters = sum(
+                    [p.numel() for p in self.recon.pre_process_model.parameters()]
+                )
+                result_info = (
+                    result_info
+                    + f"\nPre Process Network parameters: {pre_process_parameters}"
+                )
 
         if hasattr(self.recon, "post_process_model"):
-            post_process_parameters = sum(
-                [p.numel() for p in self.recon.post_process_model.parameters()]
-            )
-            result_info = (
-                result_info
-                + f"\nPost Process Network parameters: {post_process_parameters}"
-            )
+            if self.recon.post_process_model is not None:
+                post_process_parameters = sum(
+                    [p.numel() for p in self.recon.post_process_model.parameters()]
+                )
+                result_info = (
+                    result_info
+                    + f"\nPost Process Network parameters: {post_process_parameters}"
+                )
 
         result_info = result_info + f"\nTrainable parameters: {trainable_parameters}"
 

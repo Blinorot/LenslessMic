@@ -1,13 +1,19 @@
 defaults:
-  - model: baseline
-  - metrics: example
-  - datasets: example_eval # we do not want to run inference on training data
-  - dataloader: example
-  - transforms: example
+  - model: PSF_Unet4M_U5_Unet4M
+  - datasets: librispeech_eval # we do not want to run inference on training data
+  - dataloader: main
+  - transforms: example_none
+  - codec: dac
+  - reconstruction: 16x16
+  - psf: simulate
   - _self_
+metrics: null
 inferencer:
-  device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
+  device_tensors: ["lensless_codec_video", "lensed_codec_video", "lensless_psf", "audio"] # which tensors should be on device (ex. GPU)
   device: auto # device name or "auto"
-  save_path: "example" # any name here, can be a dataset name
+  save_path: null # if null, defaults to ROOT_PATH / data / datasets / reconstructed
+  dataset_tag: "librispeech" # dataset name
+  model_tag: "PSF_Unet4M_U5_Unet4M" # save_path  / dataset_tag / partition / save_tag
   seed: 1
-  from_pretrained: "saved/model_best.pth" # path to the pretrained model
+  from_pretrained: "saved/PSF_Unet4M_U5_Unet4M/checkpoint-epoch100.pth" # path to the pretrained model
+  skip_model_load: False
