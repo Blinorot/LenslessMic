@@ -48,7 +48,7 @@ def download_folder(repo_id, remote_folder, local_root):
 def main(args):
     repo_id = args.repo_id
     remote_path = args.remote_path
-    local_root = ROOT_DIR / "data" / "lensless_models"
+    local_root = ROOT_DIR / "data" / "lensless_exps"
     local_root.mkdir(exist_ok=True, parents=True)
     local_root = str(local_root)
 
