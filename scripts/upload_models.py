@@ -92,7 +92,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--local-dir",
         required=True,
-        help="Path to MainDir containing the SmallDir_* subfolders.",
+        help="Path to saved dir containing the RunName_* subfolders.",
     )
     parser.add_argument(
         "--private",
