@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 from src.lensless.pipeline import reconstruct_codec
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
+from src.utils.io_utils import ROOT_PATH
 
 
 class Inferencer(BaseTrainer):
@@ -92,7 +93,9 @@ class Inferencer(BaseTrainer):
 
         if not skip_model_load:
             # init model
-            self._from_pretrained(config.inferencer.get("from_pretrained"))
+            checkpoint_dir = ROOT_PATH / "data" / "lensless_exps" / model_tag
+            checkpoint_path = checkpoint_dir / config.inferencer["from_pretrained"]
+            self._from_pretrained(checkpoint_path)
 
     def run_inference(self):
         """
