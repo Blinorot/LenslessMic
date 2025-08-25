@@ -12,72 +12,191 @@ from src.metrics.wer_utils import init_asr_model, run_asr_model
 
 
 class SISDRMetric(BaseMetric):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, version="codec_recon", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metric = SISDRLoss()
+        self.version = version
 
-    def __call__(self, codec_audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
-        result = -self.metric(
-            references=codec_audio.detach(), estimates=recon_audio.detach()
-        )
+    def __call__(
+        self,
+        codec_audio: torch.Tensor,
+        recon_audio: torch.Tensor,
+        audio: torch.Tensor,
+        **kwargs
+    ):
+        if self.version == "codec_recon":
+            references = codec_audio.detach()
+            estimates = recon_audio.detach()
+        elif self.version == "audio_recon":
+            references = audio[..., : recon_audio.shape[-1]].detach()
+            estimates = recon_audio.detach()
+        elif self.version == "audio_codec":
+            references = audio[..., : codec_audio.shape[-1]].detach()
+            estimates = codec_audio.detach()
+        else:
+            raise NotImplementedError()
+        result = -self.metric(references=references, estimates=estimates)
         return result.item()
 
 
 class MelMetric(BaseMetric):
-    def __init__(self, audio_mel_config={}, *args, **kwargs):
+    def __init__(self, audio_mel_config={}, version="codec_recon", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metric = MelSpectrogramLoss(**audio_mel_config)
+        self.version = version
 
-    def __call__(self, codec_audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
-        return self.metric(recon_audio.detach(), codec_audio.detach())
+    def __call__(
+        self,
+        codec_audio: torch.Tensor,
+        recon_audio: torch.Tensor,
+        audio: torch.Tensor,
+        **kwargs
+    ):
+        if self.version == "codec_recon":
+            result = self.metric(recon_audio.detach(), codec_audio.detach())
+        elif self.version == "audio_recon":
+            result = self.metric(
+                recon_audio.detach(), audio[..., : recon_audio.shape[-1]].detach()
+            )
+        elif self.version == "audio_codec":
+            result = self.metric(
+                codec_audio.detach(), audio[..., : codec_audio.shape[-1]].detach()
+            )
+        else:
+            raise NotImplementedError()
+        return result.item()
 
 
 class STFTMetric(BaseMetric):
-    def __init__(self, audio_stft_config={}, *args, **kwargs):
+    def __init__(self, audio_stft_config={}, version="codec_recon", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metric = MultiScaleSTFTLoss(**audio_stft_config)
+        self.version = version
 
-    def __call__(self, codec_audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
-        return self.metric(recon_audio.detach(), codec_audio.detach())
+    def __call__(
+        self,
+        codec_audio: torch.Tensor,
+        recon_audio: torch.Tensor,
+        audio: torch.Tensor,
+        **kwargs
+    ):
+        if self.version == "codec_recon":
+            result = self.metric(recon_audio.detach(), codec_audio.detach())
+        elif self.version == "audio_recon":
+            result = self.metric(
+                recon_audio.detach(), audio[..., : recon_audio.shape[-1]].detach()
+            )
+        elif self.version == "audio_codec":
+            result = self.metric(
+                codec_audio.detach(), audio[..., : codec_audio.shape[-1]].detach()
+            )
+        else:
+            raise NotImplementedError()
+        return result.item()
 
 
 class STOIMetric(BaseMetric):
-    def __init__(self, *args, sampling_rate=16000, **kwargs):
+    def __init__(self, *args, sampling_rate=16000, version="audio_recon", **kwargs):
         super().__init__(*args, **kwargs)
         self.metric = short_time_objective_intelligibility
         self.sampling_rate = sampling_rate
+        self.version = version
 
-    def __call__(self, audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
-        return self.metric(
-            recon_audio.detach(),
-            audio[..., : recon_audio.shape[-1]].detach(),
-            fs=self.sampling_rate,
-        ).item()
+    def __call__(
+        self,
+        codec_audio: torch.Tensor,
+        recon_audio: torch.Tensor,
+        audio: torch.Tensor,
+        **kwargs
+    ):
+        if self.version == "codec_recon":
+            reference = codec_audio.detach()
+            estimate = recon_audio.detach()
+        elif self.version == "audio_recon":
+            reference = audio[..., : recon_audio.shape[-1]].detach()
+            estimate = recon_audio.detach()
+        elif self.version == "audio_codec":
+            reference = audio[..., : codec_audio.shape[-1]].detach()
+            estimate = codec_audio.detach()
+        else:
+            raise NotImplementedError()
+        result = self.metric(estimate, reference, fs=self.sampling_rate)
+        return result.item()
 
 
 class PESQMetric(BaseMetric):
-    def __init__(self, *args, sampling_rate=16000, mode="wb", **kwargs):
+    def __init__(
+        self, *args, sampling_rate=16000, mode="wb", version="audio_recon", **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.metric = perceptual_evaluation_speech_quality
         self.sampling_rate = sampling_rate
         self.mode = mode
+        self.version = version
 
-    def __call__(self, audio: torch.Tensor, recon_audio: torch.Tensor, **kwargs):
-        return self.metric(
-            recon_audio.detach(),
-            audio[..., : recon_audio.shape[-1]].detach(),
-            fs=self.sampling_rate,
-            mode=self.mode,
-        ).item()
+    def __call__(
+        self,
+        codec_audio: torch.Tensor,
+        recon_audio: torch.Tensor,
+        audio: torch.Tensor,
+        **kwargs
+    ):
+        if self.version == "codec_recon":
+            reference = codec_audio.detach()
+            estimate = recon_audio.detach()
+        elif self.version == "audio_recon":
+            reference = audio[..., : recon_audio.shape[-1]].detach()
+            estimate = recon_audio.detach()
+        elif self.version == "audio_codec":
+            reference = audio[..., : codec_audio.shape[-1]].detach()
+            estimate = codec_audio.detach()
+        else:
+            raise NotImplementedError()
+        result = self.metric(estimate, reference, fs=self.sampling_rate, mode=self.mode)
+        return result.item()
 
 
 class WERMetric(BaseMetric):
-    def __init__(self, *args, model_id="openai/whisper-tiny", device="cpu", **kwargs):
+    def __init__(
+        self,
+        *args,
+        model_id="openai/whisper-tiny",
+        device="cpu",
+        version="audio_recon",
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
+        self.device = device
         self.asr_pipeline = init_asr_model(model_id=model_id, device=device)
+        self.version = version
 
-    def __call__(self, text, recon_audio, **kwargs):
-        recon_text = run_asr_model(
-            self.asr_pipeline, recon_audio.detach().cpu(), normalize=True
-        )
-        return wer(recon_text, text).item()
+    def __call__(self, text, recon_audio, codec_audio, **kwargs):
+        if self.version == "codec_recon":
+            reference = run_asr_model(
+                self.asr_pipeline,
+                codec_audio.detach().cpu().to(self.device),
+                normalize=True,
+            )
+            estimate = run_asr_model(
+                self.asr_pipeline,
+                recon_audio.detach().cpu().to(self.device),
+                normalize=True,
+            )
+        elif self.version == "audio_recon":
+            reference = text
+            estimate = run_asr_model(
+                self.asr_pipeline,
+                recon_audio.detach().cpu().to(self.device),
+                normalize=True,
+            )
+        elif self.version == "audio_codec":
+            reference = text
+            estimate = run_asr_model(
+                self.asr_pipeline,
+                codec_audio.detach().cpu().to(self.device),
+                normalize=True,
+            )
+        else:
+            raise NotImplementedError()
+
+        return wer(estimate, reference).item()

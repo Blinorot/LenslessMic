@@ -97,17 +97,20 @@ class Inferencer(BaseTrainer):
             checkpoint_path = checkpoint_dir / config.inferencer["from_pretrained"]
             self._from_pretrained(checkpoint_path)
 
-    def run_inference(self):
+    def run_inference(self, calculate_metrics=False):
         """
         Run inference on each partition.
 
+        Args:
+            calculate_metrics (bool): if True, calculate metrics
+                instead of running the model.
         Returns:
             part_logs (dict): part_logs[part_name] contains logs
                 for the part_name partition.
         """
         part_logs = {}
         for part, dataloader in self.evaluation_dataloaders.items():
-            logs = self._inference_part(part, dataloader)
+            logs = self._inference_part(part, dataloader, calculate_metrics)
             part_logs[part] = logs
         return part_logs
 
@@ -199,13 +202,15 @@ class Inferencer(BaseTrainer):
 
         return batch
 
-    def _inference_part(self, part, dataloader):
+    def _inference_part(self, part, dataloader, calculate_metrics):
         """
         Run inference on a given partition and save predictions
 
         Args:
             part (str): name of the partition.
             dataloader (DataLoader): dataloader for the given partition.
+            calculate_metrics (bool): if True, calculate metrics
+                instead of running the model.
         Returns:
             logs (dict): metrics, calculated on the partition.
         """
@@ -227,11 +232,76 @@ class Inferencer(BaseTrainer):
                 desc=part,
                 total=len(dataloader),
             ):
-                batch = self.process_batch(
-                    batch_idx=batch_idx,
-                    batch=batch,
-                    part=part,
-                    metrics=self.evaluation_metrics,
-                )
+                if calculate_metrics:
+                    # only calculate metrics
+                    # the model output is already saved
+                    self.calculate_metrics(
+                        batch_idx=batch_idx,
+                        batch=batch,
+                        part=part,
+                        metrics=self.evaluation_metrics,
+                    )
+                else:
+                    # normal inference, run the model
+                    batch = self.process_batch(
+                        batch_idx=batch_idx,
+                        batch=batch,
+                        part=part,
+                        metrics=self.evaluation_metrics,
+                    )
 
         return self.evaluation_metrics.result()
+
+    def calculate_metrics(self, batch_idx, batch, metrics, part):
+        """
+        Compute metrics, the model outputs are pre-saved.
+
+        Args:
+            batch_idx (int): the index of the current batch.
+            batch (dict): dict-based batch containing the data from
+                the dataloader.
+            metrics (MetricTracker): MetricTracker object that computes
+                and aggregates the metrics. The metrics depend on the type
+                of the partition (train or inference).
+            part (str): name of the partition. Used to define proper saving
+                directory.
+        Returns:
+            batch (dict): dict-based batch containing the data from
+                the dataloader (possibly transformed via batch transform)
+                and model outputs.
+        """
+        batch_size = batch["lensed_codec_video"].shape[0]
+
+        outputs = []
+
+        for i in range(batch_size):
+            audio_path = Path(batch["audio_path"][i]).resolve()
+            filename = audio_path.stem
+
+            if self.save_path is not None:
+                # you can use safetensors or other lib here
+                save_dir = self.save_path / part / self.model_tag
+                recon_data = safetensors.torch.load_file(
+                    save_dir / "lensed" / f"{filename}.safetensors"
+                )
+                target_sr = self.codec.codec.metadata["kwargs"]["sample_rate"]
+                recon_audio, sr = torchaudio.load(
+                    save_dir / "audio" / f"{filename}.wav",
+                )
+                recon_data["recon_audio"] = recon_audio
+                assert target_sr == sr, "Codec and audio sample rate mismatch."
+                outputs.append(recon_data)
+
+        for k in ["recon_audio", "recon_codec_video", "recon_codes"]:
+            batch[k] = torch.stack([outputs[i][k] for i in range(batch_size)], dim=0)
+
+        codec_audio, codec_codes = self.codec.video_to_audio(
+            batch["lensed_codec_video"], return_codes=True
+        )
+        batch.update({"codec_audio": codec_audio, "codec_codes": codec_codes})
+
+        if metrics is not None:
+            for met in self.metrics["inference"]:
+                metrics.update(met.name, met(**batch))
+
+        return batch

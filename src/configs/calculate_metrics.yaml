@@ -1,0 +1,19 @@
+defaults:
+  - datasets: librispeech_eval # we do not want to run inference on training data
+  - dataloader: main
+  - transforms: example_none
+  - codec: dac
+  - reconstruction: 16x16
+  - psf: simulate
+  - metrics: all_metrics
+  - _self_
+model: null
+inferencer:
+  device_tensors: ["lensless_codec_video", "lensed_codec_video", "lensless_psf", "audio"] # which tensors should be on device (ex. GPU)
+  device: "cpu" # device name or "auto"
+  save_path: null # if null, defaults to ROOT_PATH / data / datasets / reconstructed
+  metrics_path: null # if null, defaults to ROOT_PATH / data / metrics / reconstructed
+  dataset_tag: "librispeech" # dataset name
+  model_tag: "32x32_librispeech_mse_ssim_raw_ssim_PSF_Unet4M_U5_Unet4M" # save_path  / dataset_tag / partition / save_tag
+  seed: 1
+  skip_model_load: True

@@ -86,10 +86,13 @@ class QuantizationMatchMetric(CodecMetric):
         lensed = codec_codes.detach()
 
         if self.codebook_index == "all":
+            # element-wise accuracy
             result = (recon == lensed).to(torch.float32).mean()
         else:
-            recon = recon[:, self.codebook_index]
-            lensed = lensed[:, self.codebook_index]
-            result = (recon == lensed).to(torch.float32).mean()
+            # exact match up to self.codebook_index
+            batch_size = recon.shape[0]
+            recon = recon[:, : self.codebook_index].reshape(batch_size, -1)
+            lensed = lensed[:, : self.codebook_index].reshape(batch_size, -1)
+            result = (recon == lensed).all(dim=1).to(torch.float32).mean()
 
         return result.item()
