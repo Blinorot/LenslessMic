@@ -56,10 +56,16 @@ def main(args):
 
     # Upload ONLY the targeted files while preserving subfolder structure
     # Path patterns are evaluated relative to `folder_path`.
-    allow_patterns = [
-        "**/config.yaml",
-        f"**/{args.checkpoint_filename}",
-    ]
+    if args.local_sub_dir == "":
+        allow_patterns = [
+            "**/config.yaml",
+            f"**/{args.checkpoint_filename}",
+        ]
+    else:
+        allow_patterns = [
+            f"{args.local_sub_dir}/config.yaml",
+            f"{args.local_sub_dir}/{args.checkpoint_filename}",
+        ]
 
     print(f"\nUploading from '{local_dir}' to '{repo_id}' ...")
     print(f"  Allow patterns: {allow_patterns}")
@@ -93,6 +99,11 @@ if __name__ == "__main__":
         "--local-dir",
         required=True,
         help="Path to saved dir containing the RunName_* subfolders.",
+    )
+    parser.add_argument(
+        "--local-sub-dir",
+        default="",
+        help="Name of the specific subfolder to upload. If '' upload all.",
     )
     parser.add_argument(
         "--private",
