@@ -210,13 +210,15 @@ class Inferencer(BaseTrainer):
             part (str): name of the partition.
             dataloader (DataLoader): dataloader for the given partition.
             calculate_metrics (bool): if True, calculate metrics
-                instead of running the model.
+                instead of running the model. Model outputs are pre-saved.
         Returns:
             logs (dict): metrics, calculated on the partition.
         """
 
         self.is_train = False
-        self.model.eval()
+
+        if not calculate_metrics:
+            self.model.eval()
 
         self.evaluation_metrics.reset()
 

@@ -174,26 +174,26 @@ class WERMetric(BaseMetric):
         if self.version == "codec_recon":
             reference = run_asr_model(
                 self.asr_pipeline,
-                codec_audio.detach().cpu().to(self.device),
+                codec_audio.detach().cpu(),
                 normalize=True,
             )
             estimate = run_asr_model(
                 self.asr_pipeline,
-                recon_audio.detach().cpu().to(self.device),
+                recon_audio.detach().cpu(),
                 normalize=True,
             )
         elif self.version == "audio_recon":
             reference = text
             estimate = run_asr_model(
                 self.asr_pipeline,
-                recon_audio.detach().cpu().to(self.device),
+                recon_audio.detach().cpu(),
                 normalize=True,
             )
         elif self.version == "audio_codec":
             reference = text
             estimate = run_asr_model(
                 self.asr_pipeline,
-                codec_audio.detach().cpu().to(self.device),
+                codec_audio.detach().cpu(),
                 normalize=True,
             )
         else:

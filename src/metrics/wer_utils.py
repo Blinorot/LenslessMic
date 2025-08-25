@@ -39,6 +39,7 @@ def init_asr_model(model_id="openai/whisper-tiny", device="cpu"):
     return asr_pipeline
 
 
+@torch.no_grad()
 def run_asr_model(asr_pipeline, audio, normalize=True):
     """
     Get transcription for a speech input.
