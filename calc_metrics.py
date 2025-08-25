@@ -88,7 +88,8 @@ def main(config):
             for key in keys:
                 value = logs[part][key]
                 full_key = part + "_" + key
-                f.write(f"{full_key}: {value:.3f}")
+                f.write(f"{full_key}: short: {value:.5f}, full: {value}\n")
+        torch.save(logs[part], part_metrics_path / "metrics.pth")
 
 
 if __name__ == "__main__":
