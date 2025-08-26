@@ -1,9 +1,14 @@
 import argparse
+import re
 from pathlib import Path
 
 import nemo.collections.asr as nemo_asr
 
-from src.metrics.wer_utils import normalize_text
+
+def normalize_text(text: str):
+    text = text.lower().strip()
+    text = re.sub(r"[^a-z ]", "", text)
+    return text
 
 
 def main(args):
