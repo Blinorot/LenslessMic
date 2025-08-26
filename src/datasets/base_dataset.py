@@ -476,6 +476,7 @@ class BaseDataset(Dataset):
                 codec_audio = codec.video_to_audio(codec_video)[0].detach().clone()
             audio_path = Path(audio_path)
             codec_audio_path = audio_dir / (audio_path.stem + ".wav")
+            codec_audio = codec_audio / codec_audio.abs().max()
             torchaudio.save(codec_audio_path, codec_audio, sample_rate=self.target_sr)
 
     def simulate_lensless(
