@@ -451,6 +451,32 @@ class BaseDataset(Dataset):
             torch.save(min_vals_list, min_vals_path)
             torch.save(max_vals_list, max_vals_path)
 
+    def save_in_audio_format(self, codec):
+        """
+        Convert audio to codec video, then back to audio and save.
+
+        Args:
+            codec (nn.Module): audio codec from src.transforms.
+        """
+        codec_sample_rate = codec.codec.metadata["kwargs"]["sample_rate"]
+        assert self.target_sr == codec_sample_rate, "Sample rate mismatch."
+
+        example_path = Path(self._index[0]["audio_path"])
+        audio_dir = example_path.parents[1] / f"{codec.codec_name}" / "codec_audio"
+        audio_dir.mkdir(exist_ok=True, parents=True)
+
+        for elem in tqdm(self._index, desc="Saving as audio"):
+            audio_path = elem["audio_path"]
+            audio = self.load_audio(audio_path)
+            # peak-normalization
+            audio = audio / audio.abs().max()
+
+            with torch.no_grad():
+                codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
+                codec_audio = codec.video_to_audio(codec_video)[0].detach().clone()
+            codec_audio_path = audio_dir / (audio_path.stem + ".wav")
+            torchaudio.save(codec_audio_path, codec_audio, sample_rate=self.target_sr)
+
     def simulate_lensless(
         self,
         lensless_tag,

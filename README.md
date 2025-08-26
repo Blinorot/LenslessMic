@@ -54,7 +54,7 @@ You can choose any of the branches as a starting point. [Set your choice as the 
 
 Installation may depend on your task. The general steps are the following:
 
-0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)).
+0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)). We used `PYTHON_VERSION=3.11.7`.
 
    a. `conda` version:
 
@@ -88,6 +88,21 @@ Installation may depend on your task. The general steps are the following:
 2. Install `pre-commit`:
    ```bash
    pre-commit install
+   ```
+
+NeMo ASR toolkit installation:
+
+1. Install new environment:
+
+   ```bash
+   conda create --name nemo python==3.11.7
+   conda activate nemo
+   ```
+
+2. Install required packages:
+
+   ```bash
+   pip install "nemo_toolkit[asr]"
    ```
 
 Raspberry Pi installation:

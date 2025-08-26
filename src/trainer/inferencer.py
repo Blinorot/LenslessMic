@@ -291,6 +291,18 @@ class Inferencer(BaseTrainer):
                     save_dir / "audio" / f"{filename}.wav",
                 )
                 recon_data["recon_audio"] = recon_audio
+
+                recon_text_path = save_dir / "asr_text" / f"{filename}.txt"
+                recon_text = recon_text_path.read_text().strip()
+
+                codec_text_dir = audio_path.parents[1] / f"{self.codec.codec_name}"
+                codec_text_dir = codec_text_dir / "asr_text"
+                codec_text_path = codec_text_dir / f"{filename}.txt"
+                codec_text = codec_text_path.read_text().strip()
+
+                recon_data["recon_text"] = recon_text
+                recon_data["codec_text"] = codec_text
+
                 assert target_sr == sr, "Codec and audio sample rate mismatch."
                 outputs.append(recon_data)
 

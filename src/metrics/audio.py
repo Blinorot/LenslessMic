@@ -170,32 +170,47 @@ class WERMetric(BaseMetric):
         self.asr_pipeline = init_asr_model(model_id=model_id, device=device)
         self.version = version
 
-    def __call__(self, text, recon_audio, codec_audio, **kwargs):
+    def __call__(
+        self, text, recon_audio, codec_audio, recon_text=None, codec_text=None, **kwargs
+    ):
         if self.version == "codec_recon":
-            reference = run_asr_model(
-                self.asr_pipeline,
-                codec_audio.detach().cpu(),
-                normalize=True,
-            )
-            estimate = run_asr_model(
-                self.asr_pipeline,
-                recon_audio.detach().cpu(),
-                normalize=True,
-            )
+            if codec_text is None:
+                reference = run_asr_model(
+                    self.asr_pipeline,
+                    codec_audio.detach().cpu(),
+                    normalize=True,
+                )
+            else:
+                reference = codec_text
+            if recon_text is None:
+                estimate = run_asr_model(
+                    self.asr_pipeline,
+                    recon_audio.detach().cpu(),
+                    normalize=True,
+                )
+            else:
+                estimate = recon_text
         elif self.version == "audio_recon":
             reference = text
-            estimate = run_asr_model(
-                self.asr_pipeline,
-                recon_audio.detach().cpu(),
-                normalize=True,
-            )
+
+            if recon_text is None:
+                estimate = run_asr_model(
+                    self.asr_pipeline,
+                    recon_audio.detach().cpu(),
+                    normalize=True,
+                )
+            else:
+                estimate = recon_text
         elif self.version == "audio_codec":
             reference = text
-            estimate = run_asr_model(
-                self.asr_pipeline,
-                codec_audio.detach().cpu(),
-                normalize=True,
-            )
+            if codec_text is None:
+                estimate = run_asr_model(
+                    self.asr_pipeline,
+                    codec_audio.detach().cpu(),
+                    normalize=True,
+                )
+            else:
+                estimate = codec_text
         else:
             raise NotImplementedError()
 
