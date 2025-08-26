@@ -474,6 +474,7 @@ class BaseDataset(Dataset):
             with torch.no_grad():
                 codec_video = codec.audio_to_video(audio.unsqueeze(0)).detach()
                 codec_audio = codec.video_to_audio(codec_video)[0].detach().clone()
+            audio_path = Path(audio_path)
             codec_audio_path = audio_dir / (audio_path.stem + ".wav")
             torchaudio.save(codec_audio_path, codec_audio, sample_rate=self.target_sr)
 
