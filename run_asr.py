@@ -22,9 +22,10 @@ def main(args):
     files = [str(p) for p in audio_dir.rglob("*.wav")]
 
     # Transcribe all in batches on GPU
-    texts = model.transcribe(files, batch_size=args.batch_size, return_hypotheses=False)
+    hypotheses = model.transcribe(files, batch_size=args.batch_size)
 
-    for f, text in zip(files, texts):
+    for f, hyp in zip(files, hypotheses):
+        text = hyp.text
         out_txt = out_dir / (Path(f).stem + ".txt")
         out_txt.write_text(normalize_text(text), encoding="utf-8")
 
