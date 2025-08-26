@@ -90,9 +90,10 @@ class QuantizationMatchMetric(CodecMetric):
             result = (recon == lensed).to(torch.float32).mean()
         else:
             # exact match up to self.codebook_index
-            batch_size = recon.shape[0]
-            recon = recon[:, : self.codebook_index].reshape(batch_size, -1)
-            lensed = lensed[:, : self.codebook_index].reshape(batch_size, -1)
+            # averaged across timesteps and batch
+            codebook_index = min(self.codebook_index, recon.shape[1])
+            recon = recon[:, :codebook_index]
+            lensed = lensed[:, :codebook_index]
             result = (recon == lensed).all(dim=1).to(torch.float32).mean()
 
         return result.item()
