@@ -276,6 +276,9 @@ class Inferencer(BaseTrainer):
 
         outputs = []
 
+        batch["recon_text"] = []
+        batch["codec_text"] = []
+
         for i in range(batch_size):
             audio_path = Path(batch["audio_path"][i]).resolve()
             filename = audio_path.stem
@@ -300,8 +303,8 @@ class Inferencer(BaseTrainer):
                 codec_text_path = codec_text_dir / f"{filename}.txt"
                 codec_text = codec_text_path.read_text().strip()
 
-                recon_data["recon_text"] = recon_text
-                recon_data["codec_text"] = codec_text
+                batch["recon_text"].append(recon_text)
+                batch["codec_text"].append(codec_text)
 
                 assert target_sr == sr, "Codec and audio sample rate mismatch."
                 outputs.append(recon_data)
