@@ -8,25 +8,30 @@ class PadCrop(nn.Module):
     Pad or crop audio accordingly.
     """
 
-    def __init__(self, length, pad_format, random_crop=False):
+    def __init__(self, length, pad_format, random_crop=False, ratio=None):
         """
         Args:
             length (int): number of video frames to keep
             pad_format (str): replicated, zeros, etc.
             random_crop (bool): whether to use random crop.
+            ratio (int | None): ratio between audio and codec time.
         """
         super().__init__()
 
         self.length = length
         self.pad_format = pad_format
         self.random_crop = random_crop
+        self.ratio = ratio
 
     def forward(self, instance_data):
         audio = instance_data["audio"]
         lensed_codec_video = instance_data["lensed_codec_video"]
         lensless_codec_video = instance_data["lensless_codec_video"]
 
-        ratio = audio.shape[-1] / lensed_codec_video.shape[-1]
+        if self.ratio is not None:
+            ratio = self.ratio
+        else:
+            ratio = audio.shape[-1] / lensed_codec_video.shape[-1]
 
         if lensed_codec_video.shape[-1] < self.length:
             if self.pad_format == "replicated":

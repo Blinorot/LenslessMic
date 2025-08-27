@@ -6,4 +6,5 @@ train:
         length: 4
         pad_format: "replicated"
         random_crop: true
+        ratio: null
 inference: null
