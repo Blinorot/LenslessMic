@@ -109,7 +109,14 @@ class MinMaxNormalize(nn.Module):
         else:
             max_val = self.max
 
-        x = (x - min_val) / (max_val - min_val)
+        diff = max_val - min_val
+        if torch.is_tensor(diff):
+            diff = diff.clone()
+            diff[diff == 0] = 1.0  # avoid div by zero
+        elif diff == 0:
+            diff = 1.0
+
+        x = (x - min_val) / diff
         if return_min_max_values:
             return x, min_val, max_val
         return x
@@ -133,5 +140,13 @@ class MinMaxNormalize(nn.Module):
             min_val = min_val.to(x.device)
         if isinstance(max_val, torch.Tensor):
             max_val = max_val.to(x.device)
-        x = x * (max_val - min_val) + min_val
+
+        diff = max_val - min_val
+        if torch.is_tensor(diff):
+            diff = diff.clone()
+            diff[diff == 0] = 1.0  # avoid div by zero
+        elif diff == 0:
+            diff = 1.0
+
+        x = x * diff + min_val
         return x
