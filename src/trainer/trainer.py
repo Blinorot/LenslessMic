@@ -66,6 +66,7 @@ class Trainer(BaseTrainer):
 
             if self.cfg_trainer.get("skip_NaN", False) and self._isnan_grad():
                 # skip this batch as there is a NaN gradient
+                print("NaN detected, skipping step...")
                 return batch
 
             self._clip_grad_norm()
