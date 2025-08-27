@@ -63,6 +63,11 @@ class Trainer(BaseTrainer):
 
         if self.is_train:
             batch["loss"].backward()  # sum of all losses is always called loss
+
+            if self.cfg_trainer.get("skip_NaN", False) and self._isnan_grad():
+                # skip this batch as there is a NaN gradient
+                return batch
+
             self._clip_grad_norm()
             self.optimizer.step()
             if self.lr_scheduler is not None:

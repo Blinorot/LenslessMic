@@ -376,6 +376,22 @@ class BaseTrainer:
                 )
         return batch
 
+    def _isnan_grad(self):
+        """
+        Checks if any of the gradients is NaN.
+
+        Returns:
+            isnan (float): True if there is NaN.
+        """
+        parameters = self.model.parameters()
+        if isinstance(parameters, torch.Tensor):
+            parameters = [parameters]
+        parameters = [p for p in parameters if p.grad is not None]
+        for param in parameters:
+            if torch.isnan(param.grad).any():
+                return True
+        return False
+
     def _clip_grad_norm(self):
         """
         Clips the gradient norm by the value defined in
