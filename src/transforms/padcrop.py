@@ -27,6 +27,8 @@ class PadCrop(nn.Module):
         audio = instance_data["audio"]
         lensed_codec_video = instance_data["lensed_codec_video"]
         lensless_codec_video = instance_data["lensless_codec_video"]
+        min_vals = instance_data["min_vals"]
+        max_vals = instance_data["max_vals"]
 
         if self.ratio is not None:
             ratio = self.ratio
@@ -55,6 +57,8 @@ class PadCrop(nn.Module):
 
         lensed_codec_video = lensed_codec_video[..., start:end]
         lensless_codec_video = lensless_codec_video[..., start:end]
+        min_vals = min_vals[..., start:end]
+        max_vals = max_vals[..., start:end]
 
         audio_start = int(start * ratio)
         audio_end = int(end * ratio)
@@ -66,6 +70,8 @@ class PadCrop(nn.Module):
                 "audio": audio,
                 "lensed_codec_video": lensed_codec_video,
                 "lensless_codec_video": lensless_codec_video,
+                "min_vals": min_vals,
+                "max_vals": max_vals,
             }
         )
 
