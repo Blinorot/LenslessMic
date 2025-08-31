@@ -72,3 +72,9 @@ video:
   # patchify:
   #   patch_height: 16
   #   patch_width: 16
+  group: null
+  # group:
+  #   n_rows: 8
+  #   n_cols: 8
+  #   row_space: 0
+  #   col_space: 0

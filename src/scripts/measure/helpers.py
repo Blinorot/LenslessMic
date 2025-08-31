@@ -52,6 +52,52 @@ def patchify_gray_video_np(video, patch_height, patch_width, **kwargs):
     return patchified_video
 
 
+def group_gray_frames_np(video, n_rows, n_cols, row_space, col_space, **kwargs):
+    """
+    Group several frames into one large frame.
+
+    Args:
+        video (np.array): tensor of shape (TxHxW)
+        n_rows (int): number of frames per row of the large frame.
+        n_cols (int): number of frames per column of the large frame.
+        row_space (int): space between rows.
+        col_space (int): space between columns.
+    Returns:
+        group_video (np.array): grouped video of shape
+            (group_T x group_H x group_W).
+    """
+    n_frames = n_rows * n_cols
+    n_diff = video.shape[0] % n_frames
+    if n_diff != 0:
+        new_video = np.zeros_like(video[:1])
+        new_video = np.tile(new_video, (n_frames - n_diff, 1, 1))
+        video = np.concatenate([video, new_video], axis=0)
+    n_group_frames = video.shape[0] // n_frames
+
+    _, H, W = video.shape
+    group_H = n_rows * H + (n_rows - 1) * row_space
+    group_W = n_cols * W + (n_cols - 1) * col_space
+
+    group_video = np.zeros((n_group_frames, group_H, group_W), dtype=video.dtype)
+
+    group_id = 0
+    for frame_start in range(0, video.shape[0], n_frames):
+        for row_id in range(n_rows):
+            for col_id in range(n_cols):
+                frame_id = row_id * n_cols + col_id
+                frame = video[frame_start + frame_id]
+
+                H_pos = row_id * H + row_id * row_space
+                W_pos = col_id * W + col_id * col_space
+                group_video[
+                    group_id, H_pos : H_pos + H, W_pos : W_pos + W
+                ] = frame.copy()
+
+        group_id += 1
+
+    return group_video
+
+
 def save_grayscale_video_ffv1(array: np.ndarray, path: str):
     """
     Save a grayscale uint8 video using FFV1 codec and MKV container.

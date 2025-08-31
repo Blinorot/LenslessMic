@@ -41,6 +41,7 @@ from lensless.utils.image import bayer2rgb_cc, resize
 from lensless.utils.io import save_image
 from src.scripts.measure.helpers import (
     format_img,
+    group_gray_frames_np,
     load_grayscale_video_ffv1,
     patchify_gray_video_np,
     rgb2gray_np,
@@ -334,6 +335,14 @@ def collect_dataset(config):
                         video,
                         config.video.patchify.patch_height,
                         config.video.patchify.patch_width,
+                    )
+                if config.video.group is not None:
+                    video = group_gray_frames_np(
+                        video,
+                        config.video.group.n_rows,
+                        config.video.group.n_cols,
+                        config.video.group.row_space,
+                        config.video.group.col_space,
                     )
                 video_len = video.shape[0]
                 vid_desc = "Single video capture"
