@@ -187,9 +187,13 @@ def ungroup_frames(group_video, n_rows, n_cols, row_space, col_space, n_orig_fra
         n_cols (int): number of frames per column of the large frame.
         row_space (int): space between rows.
         col_space (int): space between columns.
+        n_orig_frames (Tensor): number of frames before grouping.
+            Tensor of shape B. Current implementation cuts to the max
+            number.
     Returns:
         video (Tensor): ungrouped video of shape (BxDxHxWxCxT).
     """
+    n_orig_frames = n_orig_frames.max()
 
     B, D, group_H, group_W, C, T = group_video.shape
     H = (group_H - (n_rows - 1) * row_space) // n_rows

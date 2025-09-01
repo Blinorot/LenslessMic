@@ -1,0 +1,12 @@
+roi_kwargs:
+  top_left: [65, 118]
+  height: 256
+  width: 256
+group_frames_kwargs:
+  n_rows: 8
+  n_cols: 8
+  row_space: 0
+  col_space: 0
+resize_coef: 1
+normalize_lensless: True
+corners_list: null

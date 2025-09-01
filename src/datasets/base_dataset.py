@@ -221,6 +221,7 @@ class BaseDataset(Dataset):
             "lensless_psf": lensless_psf,
             "min_vals": min_vals,
             "max_vals": max_vals,
+            "n_orig_frames": lensed_codec_video.shape[-1],
         }
 
         return final_lensless_dict
