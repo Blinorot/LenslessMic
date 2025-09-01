@@ -218,8 +218,8 @@ class BaseDataset(Dataset):
         pad_mask = torch.zeros_like(lensed_codec_video)
         if "group" in self.lensless_tag:
             # measurement_group_nrows_ncols_rowspace_colspace
-            n_rows = self.lensless_tag.split("_")[2]
-            n_cols = self.lensless_tag.split("_")[3]
+            n_rows = int(self.lensless_tag.split("_")[2])
+            n_cols = int(self.lensless_tag.split("_")[3])
             n_frames = n_rows * n_cols
             n_diff = pad_mask.shape[-1] % n_frames
             if n_diff != 0:
