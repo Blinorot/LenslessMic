@@ -63,10 +63,13 @@ class PadCrop(nn.Module):
                 pad_repeat_times = self.length // lensless_codec_video.shape[-1]
                 if self.length % lensless_codec_video.shape[-1] != 0:
                     pad_repeat_times += 1
+
                 repeats = [1] * len(lensless_codec_video.shape)
                 repeats[-1] = pad_repeat_times
-
                 lensed_codec_video = lensed_codec_video.repeat(*repeats)
+
+                repeats = [1] * len(min_vals.shape)
+                repeats[-1] = pad_repeat_times
                 min_vals = min_vals.repeat(*repeats)
                 max_vals = max_vals.repeat(*repeats)
 
