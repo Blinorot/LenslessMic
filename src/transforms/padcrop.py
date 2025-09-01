@@ -35,6 +35,7 @@ class PadCrop(nn.Module):
         lensless_codec_video = instance_data["lensless_codec_video"]
         min_vals = instance_data["min_vals"]
         max_vals = instance_data["max_vals"]
+        pad_mask = instance_data["pad_mask"]
 
         if self.ratio is not None:
             ratio = self.ratio
@@ -58,6 +59,9 @@ class PadCrop(nn.Module):
             new_audio_len = max(int(all_frames * ratio), audio.shape[-1])
             audio = self.zero_pad(audio, new_audio_len)
 
+            # pad_mask is already of the proper shape
+            assert pad_mask.shape[-1] == all_frames
+
         if lensless_codec_video.shape[-1] < self.length:
             if self.pad_format == "replicated":
                 pad_repeat_times = self.length // lensless_codec_video.shape[-1]
@@ -67,6 +71,7 @@ class PadCrop(nn.Module):
                 repeats = [1] * len(lensless_codec_video.shape)
                 repeats[-1] = pad_repeat_times
                 lensed_codec_video = lensed_codec_video.repeat(*repeats)
+                pad_mask = pad_mask.repeat(*repeats)
                 lensless_codec_video = lensless_codec_video.repeat(*repeats)
 
                 repeats = [1] * len(min_vals.shape)
@@ -90,6 +95,7 @@ class PadCrop(nn.Module):
         start = start * self.frames_per_lensless
         end = end * self.frames_per_lensless
         lensed_codec_video = lensed_codec_video[..., start:end]
+        pad_mask = pad_mask[..., start:end]
         min_vals = min_vals[..., start:end]
         max_vals = max_vals[..., start:end]
 
@@ -105,7 +111,7 @@ class PadCrop(nn.Module):
                 "lensless_codec_video": lensless_codec_video,
                 "min_vals": min_vals,
                 "max_vals": max_vals,
-                "n_orig_frames": lensed_codec_video.shape[-1],
+                "pad_mask": pad_mask,
             }
         )
 

@@ -59,11 +59,17 @@ def reconstruct_codec(
     )
 
     if group_frames_kwargs is not None:
-        n_orig_frames = group_frames_kwargs.get(
-            "n_orig_frames", kwargs["n_orig_frames"]
-        )
+        n_orig_frames = group_frames_kwargs.get("n_orig_frames", None)
+        pad_mask = None
+        if n_orig_frames is None:
+            pad_mask = kwargs["pad_mask"]
+        elif n_orig_frames == -1:
+            n_orig_frames = kwargs["n_orig_frames"]
         raw_recon_codec_video = ungroup_frames(
-            raw_recon_codec_video, n_orig_frames=n_orig_frames, **group_frames_kwargs
+            raw_recon_codec_video,
+            n_orig_frames=n_orig_frames,
+            pad_mask=pad_mask,
+            **group_frames_kwargs,
         )
 
     min_max_normalizer = MinMaxNormalize(min=None, max=None, dim=(0, 4))

@@ -178,7 +178,9 @@ def group_frames(video, n_rows, n_cols, row_space, col_space, **kwargs):
     return group_video
 
 
-def ungroup_frames(group_video, n_rows, n_cols, row_space, col_space, n_orig_frames):
+def ungroup_frames(
+    group_video, n_rows, n_cols, row_space, col_space, n_orig_frames=None, pad_mask=None
+):
     """
     Ungroup large frame into several frames. The opposite of group frames.
 
@@ -192,10 +194,15 @@ def ungroup_frames(group_video, n_rows, n_cols, row_space, col_space, n_orig_fra
         n_orig_frames (Tensor): number of frames before grouping.
             Tensor of shape B. Current implementation cuts to the max
             number.
+        pad_mask (Tensor): mask with 0 for non-pad and 1 for pad regions.
+            Tensor of the same shape as padded ungrouped video. Used
+            instead of n_orig_frames.
     Returns:
         video (Tensor): ungrouped video of shape (BxDxHxWxCxT).
     """
-    n_orig_frames = n_orig_frames.max()
+    if n_orig_frames is not None:
+        if isinstance(n_orig_frames, torch.Tensor):
+            n_orig_frames = n_orig_frames.max()
 
     B, D, group_H, group_W, C, T = group_video.shape
     H = (group_H - (n_rows - 1) * row_space) // n_rows
@@ -220,7 +227,11 @@ def ungroup_frames(group_video, n_rows, n_cols, row_space, col_space, n_orig_fra
 
         group_id += 1
 
-    video = video[..., :n_orig_frames].clone()
+    if pad_mask is not None:
+        # zero the padded regions
+        video = (1 - pad_mask) * video
+    if n_orig_frames is not None:
+        video = video[..., :n_orig_frames].clone()
 
     return video
 

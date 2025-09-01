@@ -215,12 +215,26 @@ class BaseDataset(Dataset):
 
         lensless_codec_video = self.prepare_codec_video(lensless_path)
 
+        pad_mask = torch.zeros_like(lensed_codec_video)
+        if "group" in self.lensless_tag:
+            # measurement_group_nrows_ncols_rowspace_colspace
+            n_rows = self.lensless_tag.split("_")[2]
+            n_cols = self.lensless_tag.split("_")[3]
+            n_frames = n_rows * n_cols
+            n_diff = pad_mask.shape[-1] % n_frames
+            if n_diff != 0:
+                # mark padded regions as 1
+                padded_pad_mask = torch.ones_like(pad_mask[..., :1])
+                padded_pad_mask = padded_pad_mask.repeat(1, 1, 1, 1, n_frames - n_diff)
+                pad_mask = torch.cat([pad_mask, padded_pad_mask], dim=-1)
+
         final_lensless_dict = {
             "lensed_codec_video": lensed_codec_video,
             "lensless_codec_video": lensless_codec_video,
             "lensless_psf": lensless_psf,
             "min_vals": min_vals,
             "max_vals": max_vals,
+            "pad_mask": pad_mask,
             "n_orig_frames": lensed_codec_video.shape[-1],
         }
 

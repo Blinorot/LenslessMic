@@ -30,6 +30,7 @@ def collate_fn(dataset_items: list[dict]):
         result_batch["lensless_psf"].append(elem["lensless_psf"].unsqueeze(0))
         result_batch["min_vals"].append(elem["min_vals"])  # already with B
         result_batch["max_vals"].append(elem["max_vals"])  # already with B
+        result_batch["pad_mask"].append(elem["pad_mask"].unsqueeze(0))
         result_batch["n_orig_frames"].append(elem["n_orig_frames"])
         result_batch["audio_path"].append(elem["audio_path"])
         result_batch["text"].append(elem["text"])
@@ -44,6 +45,7 @@ def collate_fn(dataset_items: list[dict]):
     result_batch["lensless_psf"] = torch.cat(result_batch["lensless_psf"], dim=0)
     result_batch["min_vals"] = torch.cat(result_batch["min_vals"], dim=0)
     result_batch["max_vals"] = torch.cat(result_batch["max_vals"], dim=0)
+    result_batch["pad_mask"] = torch.cat(result_batch["pad_mask"], dim=0)
     result_batch["n_orig_frames"] = torch.tensor(result_batch["n_orig_frames"])
 
     return result_batch
