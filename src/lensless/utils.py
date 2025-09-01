@@ -156,7 +156,9 @@ def group_frames(video, n_rows, n_cols, row_space, col_space, **kwargs):
     group_H = n_rows * H + (n_rows - 1) * row_space
     group_W = n_cols * W + (n_cols - 1) * col_space
 
-    group_video = torch.zeros((B, D, group_H, group_W, C, n_group_frames))
+    group_video = torch.zeros(
+        (B, D, group_H, group_W, C, n_group_frames), device=video.device
+    )
 
     group_id = 0
     for frame_start in range(0, video.shape[-1], n_frames):
@@ -201,7 +203,7 @@ def ungroup_frames(group_video, n_rows, n_cols, row_space, col_space, n_orig_fra
 
     n_frames = n_rows * n_cols
 
-    video = torch.zeros((B, D, H, W, C, n_frames * T))
+    video = torch.zeros((B, D, H, W, C, n_frames * T), device=group_video.device)
 
     group_id = 0
     for frame_start in range(0, video.shape[-1], n_frames):
