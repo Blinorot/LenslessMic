@@ -58,11 +58,26 @@ def reconstruct_codec(
         corners_list=corners_list,
     )
 
+    if isinstance(min_vals, float):
+        min_vals = torch.tensor(min_vals, device=raw_recon_codec_video.device).reshape(
+            1, 1, 1, 1, 1
+        )
+        min_vals = min_vals.repeat(1, 1, 1, 1, 1, raw_recon_codec_video.shape[-1])
+    if isinstance(max_vals, float):
+        max_vals = torch.tensor(max_vals, device=raw_recon_codec_video.device).reshape(
+            1, 1, 1, 1, 1
+        )
+        max_vals = max_vals.repeat(1, 1, 1, 1, 1, raw_recon_codec_video.shape[-1])
+
     if group_frames_kwargs is not None:
         n_orig_frames = group_frames_kwargs.get("n_orig_frames", None)
         pad_mask = None
         if n_orig_frames is None:
-            pad_mask = kwargs["pad_mask"]
+            if kwargs["pad_mask"].shape[-1] > min_vals.shape[-1]:
+                # the min_vals were not padded, use n_orig_frames
+                n_orig_frames = kwargs["n_orig_frames"]
+            else:
+                pad_mask = kwargs["pad_mask"]
         elif n_orig_frames == -1:
             n_orig_frames = kwargs["n_orig_frames"]
         raw_recon_codec_video = ungroup_frames(
@@ -91,17 +106,6 @@ def reconstruct_codec(
 
     if patchify_video_kwargs is not None:
         recon_codec_video = unpatchify_video(recon_codec_video, **patchify_video_kwargs)
-
-    if isinstance(min_vals, float):
-        min_vals = torch.tensor(min_vals, device=recon_codec_video.device).reshape(
-            1, 1, 1, 1, 1
-        )
-        min_vals = min_vals.repeat(1, 1, 1, 1, 1, recon_codec_video.shape[-1])
-    if isinstance(max_vals, float):
-        max_vals = torch.tensor(max_vals, device=recon_codec_video.device).reshape(
-            1, 1, 1, 1, 1
-        )
-        max_vals = max_vals.repeat(1, 1, 1, 1, 1, recon_codec_video.shape[-1])
 
     normalized_frames = []
 
