@@ -55,7 +55,7 @@ class PadCrop(nn.Module):
             # we will assume that audio is also zero, which is not exactly true.
             # This may negatively impact audio-based losses if we use them
             # for grouped setup
-            new_audio_len = int(all_frames * ratio)
+            new_audio_len = max(int(all_frames * ratio), audio.shape[-1])
             audio = self.zero_pad(audio, new_audio_len)
 
         if lensless_codec_video.shape[-1] < self.length:
