@@ -48,23 +48,15 @@ class PadCrop(nn.Module):
             # During inference, we do not use padcrop, so we will
             # reconstruct original audio.
             all_frames = lensless_codec_video.shape[-1] * self.frames_per_lensless
-            lensed_frames = lensed_codec_video.shape[-1]
-            lensed_shape = list(lensed_codec_video.shape)
-            lensed_shape[-1] = all_frames
-            pad_lensed_codec_video = torch.zeros(*lensed_shape)
-            pad_lensed_codec_video[..., :lensed_frames] = lensed_codec_video
-            lensed_codec_video = pad_lensed_codec_video
+            lensed_codec_video = self.zero_pad(lensed_codec_video, all_frames)
+            min_vals = self.zero_pad(min_vals, all_frames)
+            max_vals = self.zero_pad(max_vals, all_frames)
 
             # we will assume that audio is also zero, which is not exactly true.
             # This may negatively impact audio-based losses if we use them
             # for grouped setup
             new_audio_len = int(all_frames * ratio)
-            audio_len = audio.shape[-1]
-            audio_shape = list(audio.shape)
-            audio_shape[-1] = new_audio_len
-            new_audio = torch.zeros(*audio_shape)
-            new_audio[..., :audio_len] = audio
-            audio = new_audio
+            audio = self.zero_pad(audio, new_audio_len)
 
         if lensless_codec_video.shape[-1] < self.length:
             if self.pad_format == "replicated":
@@ -75,6 +67,9 @@ class PadCrop(nn.Module):
                 repeats[-1] = pad_repeat_times
 
                 lensed_codec_video = lensed_codec_video.repeat(*repeats)
+                min_vals = min_vals.repeat(*repeats)
+                max_vals = max_vals.repeat(*repeats)
+
                 lensless_codec_video = lensless_codec_video.repeat(*repeats)
                 audio = audio.repeat(1, pad_repeat_times)
 
@@ -112,3 +107,11 @@ class PadCrop(nn.Module):
         )
 
         return instance_data
+
+    def zero_pad(self, tensor, new_len):
+        old_len = tensor.shape[-1]
+        tensor_shape = list(tensor.shape)
+        tensor_shape[-1] = new_len
+        new_tensor = torch.zeros(*tensor_shape)
+        new_tensor[..., :old_len] = tensor
+        return new_tensor
