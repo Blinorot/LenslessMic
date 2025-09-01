@@ -58,7 +58,7 @@ class PadCrop(nn.Module):
             # we will assume that audio is also zero, which is not exactly true.
             # This may negatively impact audio-based losses if we use them
             # for grouped setup
-            new_audio_len = all_frames * ratio
+            new_audio_len = int(all_frames * ratio)
             audio_len = audio.shape[-1]
             audio_shape = list(audio.shape)
             audio_shape[-1] = new_audio_len
