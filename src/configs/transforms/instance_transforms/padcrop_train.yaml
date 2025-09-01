@@ -7,4 +7,5 @@ train:
         pad_format: "replicated"
         random_crop: true
         ratio: null
+        frames_per_lensless: 1
 inference: null

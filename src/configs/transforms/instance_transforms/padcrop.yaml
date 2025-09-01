@@ -6,6 +6,7 @@ train:
         length: 4
         pad_format: "replicated"
         random_crop: true
+        frames_per_lensless: 1
 inference:
   all:
     _target_: torchvision.transforms.v2.Compose
@@ -14,3 +15,4 @@ inference:
         length: 16
         pad_format: "replicated"
         random_crop: false
+        frames_per_lensless: 1

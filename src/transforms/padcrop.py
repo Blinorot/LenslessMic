@@ -8,13 +8,17 @@ class PadCrop(nn.Module):
     Pad or crop audio accordingly.
     """
 
-    def __init__(self, length, pad_format, random_crop=False, ratio=None):
+    def __init__(
+        self, length, pad_format, random_crop=False, ratio=None, frames_per_lensless=1
+    ):
         """
         Args:
             length (int): number of video frames to keep
             pad_format (str): replicated, zeros, etc.
             random_crop (bool): whether to use random crop.
             ratio (int | None): ratio between audio and codec time.
+            frames_per_lensless (int): number of frames per lensless frame.
+                Use when grouped.
         """
         super().__init__()
 
@@ -22,6 +26,7 @@ class PadCrop(nn.Module):
         self.pad_format = pad_format
         self.random_crop = random_crop
         self.ratio = ratio
+        self.frames_per_lensless = frames_per_lensless
 
     def forward(self, instance_data):
         audio = instance_data["audio"]
@@ -35,19 +40,19 @@ class PadCrop(nn.Module):
         else:
             ratio = audio.shape[-1] / lensed_codec_video.shape[-1]
 
-        if lensed_codec_video.shape[-1] < self.length:
+        if lensless_codec_video.shape[-1] < self.length:
             if self.pad_format == "replicated":
-                pad_repeat_times = self.length // lensed_codec_video.shape[-1]
-                if self.length % lensed_codec_video.shape[-1] != 0:
+                pad_repeat_times = self.length // lensless_codec_video.shape[-1]
+                if self.length % lensless_codec_video.shape[-1] != 0:
                     pad_repeat_times += 1
-                repeats = [1] * len(lensed_codec_video.shape)
+                repeats = [1] * len(lensless_codec_video.shape)
                 repeats[-1] = pad_repeat_times
 
                 lensed_codec_video = lensed_codec_video.repeat(*repeats)
                 lensless_codec_video = lensless_codec_video.repeat(*repeats)
                 audio = audio.repeat(1, pad_repeat_times)
 
-        len_difference = lensed_codec_video.shape[-1] - self.length
+        len_difference = lensless_codec_video.shape[-1] - self.length
         if self.random_crop and len_difference > 0:
             start = np.random.choice(len_difference + 1)
         else:
@@ -55,8 +60,12 @@ class PadCrop(nn.Module):
 
         end = start + self.length
 
-        lensed_codec_video = lensed_codec_video[..., start:end]
         lensless_codec_video = lensless_codec_video[..., start:end]
+
+        # 1 lensless frame has frames_per_lenless lensed ones
+        start = start * self.frames_per_lensless
+        end = end * self.frames_per_lensless
+        lensed_codec_video = lensed_codec_video[..., start:end]
         min_vals = min_vals[..., start:end]
         max_vals = max_vals[..., start:end]
 
