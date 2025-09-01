@@ -67,13 +67,13 @@ class PadCrop(nn.Module):
                 repeats = [1] * len(lensless_codec_video.shape)
                 repeats[-1] = pad_repeat_times
                 lensed_codec_video = lensed_codec_video.repeat(*repeats)
+                lensless_codec_video = lensless_codec_video.repeat(*repeats)
 
                 repeats = [1] * len(min_vals.shape)
                 repeats[-1] = pad_repeat_times
                 min_vals = min_vals.repeat(*repeats)
                 max_vals = max_vals.repeat(*repeats)
 
-                lensless_codec_video = lensless_codec_video.repeat(*repeats)
                 audio = audio.repeat(1, pad_repeat_times)
 
         len_difference = lensless_codec_video.shape[-1] - self.length
