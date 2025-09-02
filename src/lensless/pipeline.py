@@ -89,6 +89,7 @@ def reconstruct_codec(
     if group_frames_kwargs is not None:
         n_orig_frames = group_frames_kwargs.get("n_orig_frames", None)
         pad_mask = None
+        ungroup_kwargs = {k: v for k, v in group_frames_kwargs.items()}
         if n_orig_frames is None:
             if kwargs["pad_mask"].shape[-1] > min_vals.shape[-1]:
                 # the min_vals were not padded, use n_orig_frames
@@ -97,11 +98,12 @@ def reconstruct_codec(
                 pad_mask = kwargs["pad_mask"]
         elif n_orig_frames == -1:
             n_orig_frames = kwargs["n_orig_frames"]
+        ungroup_kwargs["n_orig_frames"] = n_orig_frames
         recon_codec_video = ungroup_frames(
             recon_codec_video,
-            n_orig_frames=n_orig_frames,
+            # n_orig_frames=n_orig_frames,
             pad_mask=pad_mask,
-            **group_frames_kwargs,
+            **ungroup_kwargs,
         )
 
     if patchify_video_kwargs is not None:
