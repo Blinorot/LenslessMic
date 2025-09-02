@@ -68,6 +68,7 @@ class ReconstructionLoss(nn.Module):
 
         # video is B x D x H x W x C x T
         self.normalizer = MinMaxNormalize(dim=0)  # across batches
+        self.group_normalizer = MinMaxNormalize(dim=(0, 4))
 
     def forward(
         self,
@@ -111,8 +112,14 @@ class ReconstructionLoss(nn.Module):
             raw_recon_codec_video
         )
         if self.group_frames_kwargs is not None:
+            normalized_raw_lensed_codec_video = self.group_normalizer(
+                lensed_codec_video
+            )
             normalized_raw_lensed_codec_video = group_frames(
-                normalized_lensed_codec_video, **self.group_frames_kwargs
+                normalized_raw_lensed_codec_video, **self.group_frames_kwargs
+            )
+            normalized_raw_lensed_codec_video = self.prepare_video_for_loss(
+                normalized_raw_lensed_codec_video
             )
         else:
             normalized_raw_lensed_codec_video = normalized_lensed_codec_video
