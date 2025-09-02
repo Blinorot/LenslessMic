@@ -69,24 +69,6 @@ def reconstruct_codec(
         )
         max_vals = max_vals.repeat(1, 1, 1, 1, 1, raw_recon_codec_video.shape[-1])
 
-    if group_frames_kwargs is not None:
-        n_orig_frames = group_frames_kwargs.get("n_orig_frames", None)
-        pad_mask = None
-        if n_orig_frames is None:
-            if kwargs["pad_mask"].shape[-1] > min_vals.shape[-1]:
-                # the min_vals were not padded, use n_orig_frames
-                n_orig_frames = kwargs["n_orig_frames"]
-            else:
-                pad_mask = kwargs["pad_mask"]
-        elif n_orig_frames == -1:
-            n_orig_frames = kwargs["n_orig_frames"]
-        raw_recon_codec_video = ungroup_frames(
-            raw_recon_codec_video,
-            n_orig_frames=n_orig_frames,
-            pad_mask=pad_mask,
-            **group_frames_kwargs,
-        )
-
     min_max_normalizer = MinMaxNormalize(min=None, max=None, dim=(0, 4))
     # use dim = 0, 4 to support multi-object and multi-channel input
 
@@ -103,6 +85,24 @@ def reconstruct_codec(
         _, _, H, W = recon_codec_video.shape
         recon_codec_video = recon_codec_video.reshape(B, D, T, C, H, W)
         recon_codec_video = recon_codec_video.permute(0, 1, 4, 5, 3, 2).contiguous()
+
+    if group_frames_kwargs is not None:
+        n_orig_frames = group_frames_kwargs.get("n_orig_frames", None)
+        pad_mask = None
+        if n_orig_frames is None:
+            if kwargs["pad_mask"].shape[-1] > min_vals.shape[-1]:
+                # the min_vals were not padded, use n_orig_frames
+                n_orig_frames = kwargs["n_orig_frames"]
+            else:
+                pad_mask = kwargs["pad_mask"]
+        elif n_orig_frames == -1:
+            n_orig_frames = kwargs["n_orig_frames"]
+        recon_codec_video = ungroup_frames(
+            recon_codec_video,
+            n_orig_frames=n_orig_frames,
+            pad_mask=pad_mask,
+            **group_frames_kwargs,
+        )
 
     if patchify_video_kwargs is not None:
         recon_codec_video = unpatchify_video(recon_codec_video, **patchify_video_kwargs)

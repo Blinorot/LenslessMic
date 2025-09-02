@@ -35,6 +35,7 @@ loss_function:
     clamp_eps: 1.0e-5
     mag_weight: 0.0
   resize_coef: ${reconstruction.resize_coef}
+  group_frames_kwargs: ${reconstruction.group_frames_kwargs}
 trainer:
   log_step: 50
   n_epochs: 100

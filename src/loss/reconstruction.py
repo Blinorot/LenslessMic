@@ -2,6 +2,7 @@ import torch
 from piq import GMSDLoss, SSIMLoss
 from torch import nn
 
+from src.lensless.utils import group_frames
 from src.loss.sisdr import SISDRLoss
 from src.loss.timefreqloss import MelSpectrogramLoss, MultiScaleSTFTLoss
 from src.transforms import MinMaxNormalize
@@ -28,6 +29,7 @@ class ReconstructionLoss(nn.Module):
         raw_ssim_kernel=7,
         raw_ssim_sigma=1.0,
         resize_coef=16,
+        group_frames_kwargs=None,
         audio_stft_config={},
         audio_mel_config={},
     ):
@@ -62,6 +64,7 @@ class ReconstructionLoss(nn.Module):
         self.audio_mel_coef = audio_mel_coef
 
         self.resize_coef = resize_coef
+        self.group_frames_kwargs = group_frames_kwargs
 
         # video is B x D x H x W x C x T
         self.normalizer = MinMaxNormalize(dim=0)  # across batches
@@ -107,9 +110,19 @@ class ReconstructionLoss(nn.Module):
         normalized_raw_recon_codec_video = self.prepare_video_for_loss(
             raw_recon_codec_video
         )
-        normalized_raw_lensed_codec_video = nn.functional.interpolate(
-            normalized_lensed_codec_video, scale_factor=self.resize_coef, mode="nearest"
-        )
+        if self.group_frames_kwargs is not None:
+            normalized_raw_lensed_codec_video = group_frames(
+                normalized_lensed_codec_video, **self.group_frames_kwargs
+            )
+        else:
+            normalized_raw_lensed_codec_video = normalized_lensed_codec_video
+
+        if self.resize_coef > 1:
+            normalized_raw_lensed_codec_video = nn.functional.interpolate(
+                normalized_raw_lensed_codec_video,
+                scale_factor=self.resize_coef,
+                mode="nearest",
+            )
 
         if self.raw_codec_ssim_coef > 0:
             raw_codec_ssim_loss = self.raw_ssim_loss(

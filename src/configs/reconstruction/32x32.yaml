@@ -3,5 +3,6 @@ roi_kwargs:
   height: 256
   width: 256
 resize_coef: 8
+group_frames_kwargs: null
 normalize_lensless: True
 corners_list: null
