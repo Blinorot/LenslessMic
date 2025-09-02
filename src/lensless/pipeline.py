@@ -98,6 +98,11 @@ def reconstruct_codec(
                 pad_mask = kwargs["pad_mask"]
         elif n_orig_frames == -1:
             n_orig_frames = kwargs["n_orig_frames"]
+
+        # cut if too big
+        if n_orig_frames is not None:
+            n_orig_frames = min(n_orig_frames, min_vals.shape[-1])
+
         ungroup_kwargs["n_orig_frames"] = n_orig_frames
         recon_codec_video = ungroup_frames(
             recon_codec_video,
