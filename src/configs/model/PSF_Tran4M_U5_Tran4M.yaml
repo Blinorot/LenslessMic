@@ -1,0 +1,55 @@
+_target_: src.model.LenslessWrapper
+use_loader: false
+loader_kwargs: null
+use_batch_video_version: false
+freeze_weights: false
+
+# define psf for initialization
+psf_path: data/digicam_psf/SIM_psf.png
+psf_loader_kwargs:
+  downsample: 8
+  return_bg: false
+grayscale_psf: true
+
+# define lensless model
+recon_name: UnrolledADMM
+recon_kwargs:
+  # Number of iterations
+  n_iter: 5
+  # Hyperparameters
+  mu1: 1e-4
+  mu2: 1e-4
+  mu3: 1e-4
+  tau: 2e-4
+  pre_process:
+    _target_: lensless.recon.restormer.Restormer
+    inp_channels: 1
+    out_channels: 1
+    dim: 24
+    num_blocks: [2, 2, 4, 4]
+    num_refinement_blocks: 4
+    heads: [1, 2, 4, 8]
+    ffn_expansion_factor: 2.66
+    LayerNorm_type: "BiasFree"
+  post_process:
+    _target_: lensless.recon.restormer.Restormer
+    inp_channels: 1
+    out_channels: 1
+    dim: 24
+    num_blocks: [2, 2, 4, 4]
+    num_refinement_blocks: 4
+    heads: [1, 2, 4, 8]
+    ffn_expansion_factor: 2.66
+    LayerNorm_type: "BiasFree"
+  psf_network:
+    _target_: lensless.recon.drunet.network_unet.UNetRes
+    in_nc: 2 # grayscale +
+    out_nc: 1 # grayscale
+    nc: [4,8,16,32]
+    nb: 4
+    act_mode: "R"
+    downsample_mode: "strideconv"
+    upsample_mode: "convtranspose"
+  psf_residual: false
+  skip_unrolled: false
+  return_intermediate: false
