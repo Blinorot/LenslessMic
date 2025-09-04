@@ -20,6 +20,7 @@ class LenslessWrapper(nn.Module):
         psf_path=None,
         psf_loader_kwargs=None,
         grayscale_psf=False,
+        psf_default_device="cpu",
     ):
         """
         Args:
@@ -36,6 +37,7 @@ class LenslessWrapper(nn.Module):
                 is not provided in recon_kwargs.
             psf_loader_kwargs (dict | None): kwargs for loading psf.
             grayscale_psf (bool): whether to convert psf to grayscale.
+            psf_default_device (str): default device for default PSF.
         """
         super().__init__()
 
@@ -44,7 +46,7 @@ class LenslessWrapper(nn.Module):
             if grayscale_psf:
                 psf = rgb2gray(psf)
             psf = torch.from_numpy(psf)
-            recon_kwargs["psf"] = psf
+            recon_kwargs["psf"] = psf.to(psf_default_device)
 
         if use_loader:
             model_path = download_model(**loader_kwargs)
