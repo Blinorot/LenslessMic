@@ -227,6 +227,8 @@ class TrainerGAN(BaseTrainer):
                 self.lr_scheduler_D.step()
 
             self.optimizer_G.zero_grad()
+        else:
+            batch["d_loss"] = 0  # placeholder
 
         discriminator_outputs = self.discriminator(
             recon_audio=batch["recon_audio"], codec_audio=batch["codec_audio"]
