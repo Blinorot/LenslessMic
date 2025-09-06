@@ -46,10 +46,10 @@ class Trainer(BaseTrainer):
         if self.cfg_trainer.get("filter_padded_frames", False):
             # assumes batch_size == 1
             mask_T = recon_codec_video.any(dim=(0, 1, 2, 3, 4))
-            recon_codec_video = [..., mask_T]
+            recon_codec_video = recon_codec_video[..., mask_T]
             lensed_codec_video = batch["lensed_codec_video"]
             mask_T = lensed_codec_video.any(dim=(0, 1, 2, 3, 4))
-            lensed_codec_video = [..., mask_T]
+            lensed_codec_video = lensed_codec_video[..., mask_T]
             batch["lensed_codec_video"] = lensed_codec_video
 
         recon_audio, recon_codes = self.codec.video_to_audio(
