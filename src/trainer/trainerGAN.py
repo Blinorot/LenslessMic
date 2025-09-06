@@ -228,7 +228,7 @@ class TrainerGAN(BaseTrainer):
 
             self.optimizer_G.zero_grad()
         else:
-            batch["d_loss"] = 0  # placeholder
+            batch["d_loss"] = torch.tensor(0)  # placeholder
 
         discriminator_outputs = self.discriminator(
             recon_audio=batch["recon_audio"], codec_audio=batch["codec_audio"]
