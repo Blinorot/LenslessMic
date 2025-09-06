@@ -80,7 +80,7 @@ class TrainerGAN(BaseTrainer):
         self.criterion = criterion
         self.optimizer_G = optimizer_G
         self.optimizer_D = optimizer_D
-        self.lr_scheduler_G = lr_scheduler_G
+        self.lr_scheduler = lr_scheduler_G
         self.lr_scheduler_D = lr_scheduler_D
         self.batch_transforms = batch_transforms
 
@@ -245,8 +245,8 @@ class TrainerGAN(BaseTrainer):
 
             self._clip_grad_norm()
             self.optimizer_G.step()
-            if self.lr_scheduler_G is not None:
-                self.lr_scheduler_G.step()
+            if self.lr_scheduler is not None:
+                self.lr_scheduler.step()
 
         # update metrics for each loss (in case of multiple losses)
         for loss_name in self.config.writer.loss_names:
@@ -321,7 +321,7 @@ class TrainerGAN(BaseTrainer):
             "state_dict": self.model.state_dict(),
             "state_dict_D": self.discriminator.state_dict(),
             "optimizer_G": self.optimizer_G.state_dict(),
-            "lr_scheduler_G": self.lr_scheduler_G.state_dict(),
+            "lr_scheduler_G": self.lr_scheduler.state_dict(),
             "optimizer_D": self.optimizer_D.state_dict(),
             "lr_scheduler_D": self.lr_scheduler_D.state_dict(),
             "monitor_best": self.mnt_best,
@@ -385,7 +385,7 @@ class TrainerGAN(BaseTrainer):
         else:
             self.optimizer_G.load_state_dict(checkpoint["optimizer_G"])
             self.optimizer_D.load_state_dict(checkpoint["optimizer_D"])
-            self.lr_scheduler_G.load_state_dict(checkpoint["lr_scheduler_G"])
+            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler_G"])
             self.lr_scheduler_D.load_state_dict(checkpoint["lr_scheduler_D"])
 
         self.logger.info(
