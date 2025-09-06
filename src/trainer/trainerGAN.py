@@ -232,7 +232,7 @@ class TrainerGAN(BaseTrainer):
             )
             batch.update(discriminator_outputs)
 
-        all_losses = self.criterion.discriminator_loss(**batch)
+        all_losses = self.criterion(**batch)
         batch.update(all_losses)
 
         if self.is_train:
