@@ -1,0 +1,100 @@
+test_auth_0:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 55
+test_auth_1:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 56
+test_auth_2:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 57
+test_auth_3:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 58
+test_auth_4:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 59
+test_auth_5:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 60
+test_auth_6:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 61
+test_auth_7:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 62
+test_auth_8:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 63
+test_auth_9:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  randomize_psf_percent: 100
+  randomize_psf_seed: 64

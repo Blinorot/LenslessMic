@@ -43,6 +43,8 @@ class BaseDataset(Dataset):
         roi_kwargs=None,
         sim_psf_config=None,
         psf_path=None,
+        randomize_psf_percent=0,
+        randomize_psf_seed=55,
     ):
         """
         Args:
@@ -66,6 +68,9 @@ class BaseDataset(Dataset):
             roi_kwargs (dict | None): top_left, height, and width for ROI.
             sim_psf_config (dict | None): config for simulating PSF.
             psf_path (str | None): path to psf (use for single-mask dataset).
+            randomize_psf_percent (int): the percentage of the PSF that
+                should be replaced with random values.
+            randomize_psf_seed (int): random seed for the PSF randomizer.
         """
         self._assert_index_is_valid(index)
 
@@ -88,6 +93,8 @@ class BaseDataset(Dataset):
         self.computed_psfs = {}
 
         self.sim_psf_config = sim_psf_config
+        self.randomize_psf_percent = randomize_psf_percent
+        self.randomize_psf_gen = np.random.default_rng(randomize_psf_seed)
 
         self.lensless_tag = lensless_tag
         self.codec_name = codec_name
@@ -198,18 +205,37 @@ class BaseDataset(Dataset):
         lensless_mask_label = lensless_video_dir / f"{filename}.txt"
         if lensless_mask_label.exists():
             lensless_mask_label = lensless_mask_label.read_text()
-            if self.computed_psfs.get(lensless_mask_label) is not None:
-                lensless_psf = self.computed_psfs[lensless_mask_label]
-            else:
-                # compute psf only once
+
+            if self.randomize_psf_percent > 0:
                 lensless_mask_path = (
                     lensless_video_dir / "masks" / f"mask_{lensless_mask_label}.npy"
                 )
                 lensless_mask = np.load(lensless_mask_path)
-                lensless_psf = simulate_psf_from_mask(
-                    lensless_mask, **self.sim_psf_config
+                noisy_mask = lensless_mask.copy()
+                n_pixels = noisy_mask.size
+                n_wrong_pixels = int(n_pixels * self.randomize_psf_percent / 100)
+                wrong_pixels = self.randomize_psf_gen.choice(
+                    n_pixels, n_wrong_pixels, replace=False
                 )
-                self.computed_psfs[lensless_mask_label] = lensless_psf.clone()
+                noisy_mask = noisy_mask.flatten()
+                noisy_mask[wrong_pixels] = self.randomize_psf_gen.uniform(
+                    size=n_wrong_pixels
+                )
+                noisy_mask = noisy_mask.reshape(lensless_mask.shape)
+                lensless_psf = simulate_psf_from_mask(noisy_mask, **self.sim_psf_config)
+            else:
+                if self.computed_psfs.get(lensless_mask_label) is not None:
+                    lensless_psf = self.computed_psfs[lensless_mask_label]
+                else:
+                    # compute psf only once
+                    lensless_mask_path = (
+                        lensless_video_dir / "masks" / f"mask_{lensless_mask_label}.npy"
+                    )
+                    lensless_mask = np.load(lensless_mask_path)
+                    lensless_psf = simulate_psf_from_mask(
+                        lensless_mask, **self.sim_psf_config
+                    )
+                    self.computed_psfs[lensless_mask_label] = lensless_psf.clone()
         else:
             lensless_psf = self.psf.clone()
 
