@@ -35,6 +35,7 @@ def transcribe(model, audio_dir, batch_size):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     files = sorted([str(p) for p in audio_dir.rglob("*.wav")])
+    files = files + sorted([str(p) for p in audio_dir.rglob("*.flac")])
 
     # Transcribe all in batches on GPU
     hypotheses = model.transcribe(files, batch_size=batch_size)
