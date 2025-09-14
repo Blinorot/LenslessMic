@@ -85,6 +85,8 @@ Installation may depend on your task. The general steps are the following:
    pip install -r requirements.txt
    ```
 
+   Also follow [VISQOL](https://github.com/google/visqol) repo for metric installation.
+
 2. Install `pre-commit`:
    ```bash
    pre-commit install
