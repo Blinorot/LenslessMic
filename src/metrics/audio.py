@@ -197,8 +197,8 @@ class VISQOLMetric(BaseMetric):
             reference = [resample(elem) for elem in reference]
             reference = torch.stack(reference)
 
-        estimate = estimate.cpu().numpy()
-        reference = reference.cpu().numpy()
+        estimate = estimate.cpu().numpy().astype(float)
+        reference = reference.cpu().numpy().astype(float)
 
         result = self.metric(estimate=estimate, reference=reference, mode=self.mode)
         return result.item()
