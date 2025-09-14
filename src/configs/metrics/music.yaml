@@ -1,0 +1,90 @@
+device: "auto"
+train: null
+inference: # metrics that are calculated during inference (eval)
+  # SI-SDR
+  - _target_: src.metrics.SISDRMetric
+    name: "SISDR_ref_codec_est_recon"
+    version: "codec_recon"
+  # VISQOL
+  - _target_: src.metrics.VISQOLMetric
+    name: "VISQOL_ref_audio_est_recon"
+    version: "audio_recon"
+    mode: "audio"
+  - _target_: src.metrics.VISQOLMetric
+    name: "VISQOL_ref_audio_est_codec"
+    version: "audio_codec"
+    mode: "audio"
+  # Mel
+  - _target_: src.metrics.MelMetric
+    name: "Mel_ref_audio_est_codec"
+    version: "audio_codec"
+    audio_mel_config:
+      n_mels: [5, 10, 20, 40, 80, 160, 320]
+      window_lengths: [32, 64, 128, 256, 512, 1024, 2048]
+      mel_fmin: [0, 0, 0, 0, 0, 0, 0]
+      mel_fmax: [null, null, null, null, null, null, null]
+      pow: 1.0
+      clamp_eps: 1.0e-5
+      mag_weight: 0.0
+  - _target_: src.metrics.MelMetric
+    name: "Mel_ref_audio_est_recon"
+    version: "audio_recon"
+    audio_mel_config:
+      n_mels: [5, 10, 20, 40, 80, 160, 320]
+      window_lengths: [32, 64, 128, 256, 512, 1024, 2048]
+      mel_fmin: [0, 0, 0, 0, 0, 0, 0]
+      mel_fmax: [null, null, null, null, null, null, null]
+      pow: 1.0
+      clamp_eps: 1.0e-5
+      mag_weight: 0.0
+  # Quantization Match
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-all"
+    codebook_index: "all"
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-1"
+    codebook_index: 1
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-2"
+    codebook_index: 2
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-3"
+    codebook_index: 3
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-4"
+    codebook_index: 4
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-5"
+    codebook_index: 5
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-6"
+    codebook_index: 6
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-7"
+    codebook_index: 7
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-8"
+    codebook_index: 8
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-9"
+    codebook_index: 9
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-10"
+    codebook_index: 10
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-11"
+    codebook_index: 11
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-12"
+    codebook_index: 12
+  - _target_: src.metrics.QuantizationMatchMetric
+    name: "QuantizationMatch-13"
+    codebook_index: 13
+  # Other Codec Metrics
+  - _target_: src.metrics.PSNRMetric
+    name: "PSNR"
+  - _target_: src.metrics.SSIMMetric
+    name: "SSIM"
+  - _target_: src.metrics.MSEMetric
+    name: "MSE"
+    normalized: False

@@ -4,6 +4,7 @@ from src.metrics.audio import (
     SISDRMetric,
     STFTMetric,
     STOIMetric,
+    VISQOLMetric,
     WERMetric,
 )
 from src.metrics.codec import (

@@ -1,4 +1,5 @@
 import torch
+import torchaudio
 from torchmetrics.functional.audio import (
     perceptual_evaluation_speech_quality,
     short_time_objective_intelligibility,
@@ -8,6 +9,7 @@ from torchmetrics.functional.text import word_error_rate as wer
 from src.loss.sisdr import SISDRLoss
 from src.loss.timefreqloss import MelSpectrogramLoss, MultiScaleSTFTLoss
 from src.metrics.base_metric import BaseMetric
+from src.metrics.visqol_utils import calc_visqol
 from src.metrics.wer_utils import init_asr_model, run_asr_model
 
 
@@ -153,6 +155,52 @@ class PESQMetric(BaseMetric):
         else:
             raise NotImplementedError()
         result = self.metric(estimate, reference, fs=self.sampling_rate, mode=self.mode)
+        return result.item()
+
+
+class VISQOLMetric(BaseMetric):
+    def __init__(
+        self, *args, sampling_rate=16000, mode="speech", version="audio_recon", **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self.metric = calc_visqol
+        self.sampling_rate = sampling_rate
+        self.mode = mode
+        self.version = version
+        self.target_rate = 16000 if mode == "speech" else 48000
+
+    def __call__(
+        self,
+        codec_audio: torch.Tensor,
+        recon_audio: torch.Tensor,
+        audio: torch.Tensor,
+        **kwargs
+    ):
+        if self.version == "codec_recon":
+            reference = codec_audio.detach()
+            estimate = recon_audio.detach()
+        elif self.version == "audio_recon":
+            reference = audio[..., : recon_audio.shape[-1]].detach()
+            estimate = recon_audio.detach()
+        elif self.version == "audio_codec":
+            reference = audio[..., : codec_audio.shape[-1]].detach()
+            estimate = codec_audio.detach()
+        else:
+            raise NotImplementedError()
+
+        if self.sampling_rate != self.target_rate:
+            resample = torchaudio.transforms.Resample(
+                self.sampling_rate, self.target_rate
+            )
+            estimate = [resample(elem) for elem in estimate]
+            estimate = torch.stack(estimate)
+            reference = [resample(elem) for elem in reference]
+            reference = torch.stack(reference)
+
+        estimate = estimate.cpu().numpy()
+        reference = reference.cpu().numpy()
+
+        result = self.metric(estimate=estimate, reference=reference, mode=self.mode)
         return result.item()
 
 
