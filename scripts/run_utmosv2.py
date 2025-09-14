@@ -29,8 +29,8 @@ def get_mos(model, audio_dir, batch_size):
     out_dir = audio_dir.parent / "utmos_mos"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    files = sorted([str(p) for p in audio_dir.rglob("*.wav")])
-    files = files + sorted([str(p) for p in audio_dir.rglob("*.flac")])
+    files = sorted([str(p.stem) for p in audio_dir.rglob("*.wav")])
+    files = files + sorted([str(p.stem) for p in audio_dir.rglob("*.flac")])
 
     # Transcribe all in batches on GPU
     mos = model.predict(input_dir=str(audio_dir), val_list=files, batch_size=batch_size)
