@@ -90,9 +90,9 @@ Installation may depend on your task. The general steps are the following:
    pre-commit install
    ```
 
-NeMo ASR toolkit installation:
+NeMo ASR toolkit and UTMOSv2 installation:
 
-1. Install new environment:
+1. Create new environment:
 
    ```bash
    conda create --name nemo python==3.11.7
@@ -103,6 +103,7 @@ NeMo ASR toolkit installation:
 
    ```bash
    pip install "nemo_toolkit[asr]"
+   pip install git+https://github.com/sarulab-speech/UTMOSv2.git
    ```
 
 Raspberry Pi installation:
