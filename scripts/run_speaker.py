@@ -7,6 +7,7 @@ import torch
 import torchaudio
 from nemo.collections.asr.parts.utils.speaker_utils import embedding_normalize
 from torch.utils.data import DataLoader, Dataset
+from tqdm.auto import tqdm
 
 
 class FileDataset(Dataset):
@@ -62,6 +63,7 @@ def get_embeddings(model, audio_dir, batch_size, device):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     files = sorted([str(p) for p in audio_dir.rglob("*.wav")])
+    files = files + sorted([str(p) for p in audio_dir.rglob("*.flac")])
     dataset = FileDataset(files)
     dataloader = DataLoader(
         dataset,
@@ -72,10 +74,12 @@ def get_embeddings(model, audio_dir, batch_size, device):
     )
 
     # Transcribe all in batches on GPU
-    for audio, audio_len, audio_paths in dataloader:
+    for audio, audio_len, audio_paths in tqdm(dataloader):
         audio, audio_len = audio.to(device), audio_len.to(device)
         _, emb = model(input_signal=audio, input_signal_length=audio_len)
         emb = emb.squeeze().detach().cpu().numpy()
+        if len(emb.shape) == 1:  # batch-size = 1
+            emb = emb[None, :]
         emb = embedding_normalize(emb)
         for j in range(emb.shape[0]):
             filepath = audio_paths[j]
