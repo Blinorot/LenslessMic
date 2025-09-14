@@ -92,7 +92,7 @@ Installation may depend on your task. The general steps are the following:
    pre-commit install
    ```
 
-NeMo ASR toolkit and UTMOSv2 installation:
+NeMo ASR toolkit installation:
 
 1. Create new environment:
 
@@ -105,7 +105,23 @@ NeMo ASR toolkit and UTMOSv2 installation:
 
    ```bash
    pip install "nemo_toolkit[asr]"
-   pip install git+https://github.com/sarulab-speech/UTMOSv2.git
+   ```
+
+UTMOS installation:
+
+1. Create new environment:
+
+   ```bash
+   conda create --name utmos python==3.9.7
+   conda activate utmos
+   ```
+
+2. Install required packages:
+
+   ```bash
+   git clone https://huggingface.co/spaces/sarulab-speech/UTMOS-demo
+   cd UTMOS-demo
+   pip install -r requirements.txt
    ```
 
 Raspberry Pi installation:
