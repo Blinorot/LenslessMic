@@ -45,6 +45,8 @@ class BaseDataset(Dataset):
         psf_path=None,
         randomize_psf_percent=0,
         randomize_psf_seed=55,
+        replace_min_val=None,
+        replace_max_val=None,
     ):
         """
         Args:
@@ -71,6 +73,8 @@ class BaseDataset(Dataset):
             randomize_psf_percent (int): the percentage of the PSF that
                 should be replaced with random values.
             randomize_psf_seed (int): random seed for the PSF randomizer.
+            replace_min_val (None | float): if float, replaces min val value.
+            replace_max_val (None | float): if float, replaces max val value.
         """
         self._assert_index_is_valid(index)
 
@@ -100,6 +104,8 @@ class BaseDataset(Dataset):
         self.codec_name = codec_name
         self.codec = codec
         self.roi_kwargs = roi_kwargs
+        self.replace_min_val = replace_min_val
+        self.replace_max_val = replace_max_val
 
         if self.codec is not None:
             if self.codec_name is None:
@@ -200,6 +206,11 @@ class BaseDataset(Dataset):
             min_vals = torch.stack(min_vals_list, dim=-1)
             max_vals_list = torch.load(max_vals_path, map_location="cpu")
             max_vals = torch.stack(max_vals_list, dim=-1)
+
+        if self.replace_max_val is not None:
+            max_vals = torch.ones_like(max_vals) * self.replace_max_val
+        if self.replace_min_val is not None:
+            min_vals = torch.ones_like(min_vals) * self.replace_min_val
 
         lensless_path = lensless_video_dir / f"{filename}.mkv"
         lensless_mask_label = lensless_video_dir / f"{filename}.txt"

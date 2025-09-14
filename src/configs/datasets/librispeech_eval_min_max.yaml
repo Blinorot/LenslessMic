@@ -1,0 +1,10 @@
+test_minmax:
+  _target_: src.datasets.LibrispeechDataset
+  part: "test-clean"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement"
+  instance_transforms: ${transforms.instance_transforms.inference}
+  sim_psf_config: ${psf}
+  replace_max_val: 8.5058
+  replace_min_val: -8.5912
