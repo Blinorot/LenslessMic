@@ -3,11 +3,26 @@ import re
 from pathlib import Path
 
 import nemo.collections.asr as nemo_asr
+import numpy as np
 import torch
 import torchaudio
-from nemo.collections.asr.parts.utils.speaker_utils import embedding_normalize
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
+
+
+def embedding_normalize(embs, eps=1e-10):
+    """
+    Mean and L2 length normalize speaker embeddings.
+
+    Args:
+        embs: np.ndarray of shape (B, D)
+    Returns:
+        np.ndarray of shape (B, D), normalized
+    """
+    # always apply per-row L2 normalization
+    l2 = np.linalg.norm(embs, ord=2, axis=1, keepdims=True) + eps
+    embs = embs / l2
+    return embs
 
 
 class FileDataset(Dataset):
