@@ -11,19 +11,19 @@ def normalize_text(text: str):
     return text
 
 
-def find_audio_dirs(root: Path):
+def find_audio_dirs(root: Path, target_names=("audio", "codec_audio")):
     """
-    Yield all directories named exactly 'audio'
-    under root (including root if it's named 'audio').
+    Yield all directories whose name is in target_names
+    under root (including root itself).
     """
     seen = set()
 
-    if root.is_dir() and root.name == "audio":
+    if root.is_dir() and root.name in target_names:
         seen.add(root.resolve())
         yield root
 
-    for p in root.rglob("audio"):
-        if p.is_dir():
+    for p in root.rglob("*"):
+        if p.is_dir() and p.name in target_names:
             rp = p.resolve()
             if rp not in seen:
                 seen.add(rp)
