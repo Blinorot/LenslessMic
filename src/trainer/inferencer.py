@@ -278,6 +278,9 @@ class Inferencer(BaseTrainer):
 
         batch["recon_text"] = []
         batch["codec_text"] = []
+        batch["recon_emb"] = []
+        batch["codec_emb"] = []
+        batch["audio_emb"] = []
 
         for i in range(batch_size):
             audio_path = Path(batch["audio_path"][i]).resolve()
@@ -295,22 +298,44 @@ class Inferencer(BaseTrainer):
                 )
                 recon_data["recon_audio"] = recon_audio
 
-                recon_text_path = save_dir / "asr_text" / f"{filename}.txt"
-                recon_text = recon_text_path.read_text().strip()
+                if (save_dir / "asr_text").exists():
+                    recon_text_path = save_dir / "asr_text" / f"{filename}.txt"
+                    recon_text = recon_text_path.read_text().strip()
 
-                codec_text_dir = audio_path.parents[1] / f"{self.codec.codec_name}"
-                codec_text_dir = codec_text_dir / "asr_text"
-                codec_text_path = codec_text_dir / f"{filename}.txt"
-                codec_text = codec_text_path.read_text().strip()
+                    codec_text_dir = audio_path.parents[1] / f"{self.codec.codec_name}"
+                    codec_text_dir = codec_text_dir / "asr_text"
+                    codec_text_path = codec_text_dir / f"{filename}.txt"
+                    codec_text = codec_text_path.read_text().strip()
 
-                batch["recon_text"].append(recon_text)
-                batch["codec_text"].append(codec_text)
+                    batch["recon_text"].append(recon_text)
+                    batch["codec_text"].append(codec_text)
+
+                if (save_dir / "speaker_emb").exists():
+                    recon_emb_path = save_dir / "speaker_emb" / f"{filename}.pth"
+                    recon_emb = torch.load(recon_emb_path)
+
+                    codec_emb_dir = audio_path.parents[1] / f"{self.codec.codec_name}"
+                    codec_emb_dir = codec_emb_dir / "speaker_emb"
+                    codec_emb_path = codec_emb_dir / f"{filename}.pth"
+                    codec_emb = torch.load(codec_emb_path)
+
+                    audio_emb_dir = audio_path.parents[1] / "speaker_emb"
+                    audio_emb_path = audio_emb_dir / f"{filename}.pth"
+                    audio_emb = torch.load(audio_emb_path)
+
+                    batch["recon_emb"].append(recon_emb)
+                    batch["codec_emb"].append(codec_emb)
+                    batch["audio_emb"].append(audio_emb)
 
                 assert target_sr == sr, "Codec and audio sample rate mismatch."
                 outputs.append(recon_data)
 
         for k in ["recon_audio", "recon_codec_video", "recon_codes"]:
             batch[k] = torch.stack([outputs[i][k] for i in range(batch_size)], dim=0)
+
+        for k in ["recon_emb", "codec_emb", "audio_emb"]:
+            if len(batch[k]) > 0:
+                batch[k] = torch.stack([batch[k][i] for i in range(batch_size)], dim=0)
 
         codec_audio, codec_codes = self.codec.video_to_audio(
             batch["lensed_codec_video"], return_codes=True

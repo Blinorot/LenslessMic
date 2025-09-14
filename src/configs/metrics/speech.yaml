@@ -1,6 +1,13 @@
 device: "auto"
 train: null
 inference: # metrics that are calculated during inference (eval)
+  # SMA
+  - _target_: src.metrics.SMAMetric
+    name: "SMA_ref_audio_est_recon"
+    version: "audio_recon"
+  - _target_: src.metrics.SMAMetric
+    name: "SMA_ref_audio_est_codec"
+    version: "audio_codec"
   # SI-SDR
   - _target_: src.metrics.SISDRMetric
     name: "SISDR_ref_codec_est_recon"

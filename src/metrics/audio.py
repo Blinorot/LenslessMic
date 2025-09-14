@@ -263,3 +263,34 @@ class WERMetric(BaseMetric):
             raise NotImplementedError()
 
         return wer(estimate, reference).item()
+
+
+class SMAMetric(BaseMetric):
+    def __init__(self, *args, version="audio_recon", threshold=0.7, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.version = version
+        self.threshold = threshold
+
+    def __call__(self, recon_emb, codec_emb, audio_emb, **kwargs):
+        if self.version == "codec_recon":
+            reference = codec_emb
+            estimate = recon_emb
+        elif self.version == "audio_recon":
+            reference = audio_emb
+            estimate = recon_emb
+        elif self.version == "audio_codec":
+            reference = audio_emb
+            estimate = codec_emb
+        else:
+            raise NotImplementedError()
+
+        cos = torch.nn.functional.cosine_similarity(
+            reference, estimate, dim=1, eps=1e-8
+        )  # [-1, 1], shape [B]
+
+        sim01 = (cos + 1.0) * 0.5
+
+        # Fraction of matches
+        match_ratio = (sim01 >= self.threshold).float().mean()
+
+        return match_ratio.item()

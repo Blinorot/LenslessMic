@@ -2,6 +2,7 @@ from src.metrics.audio import (
     MelMetric,
     PESQMetric,
     SISDRMetric,
+    SMAMetric,
     STFTMetric,
     STOIMetric,
     VISQOLMetric,
