@@ -30,11 +30,13 @@ class SISDRMetric(BaseMetric):
             references = codec_audio.detach()
             estimates = recon_audio.detach()
         elif self.version == "audio_recon":
-            references = audio[..., : recon_audio.shape[-1]].detach()
-            estimates = recon_audio.detach()
+            min_length = min(audio.shape[-1], recon_audio.shape[-1])
+            references = audio[..., :min_length].detach()
+            estimates = recon_audio[..., :min_length].detach()
         elif self.version == "audio_codec":
-            references = audio[..., : codec_audio.shape[-1]].detach()
-            estimates = codec_audio.detach()
+            min_length = min(audio.shape[-1], codec_audio.shape[-1])
+            references = audio[..., :min_length].detach()
+            estimates = codec_audio[..., :min_length].detach()
         else:
             raise NotImplementedError()
         result = -self.metric(references=references, estimates=estimates)
@@ -55,17 +57,19 @@ class MelMetric(BaseMetric):
         **kwargs
     ):
         if self.version == "codec_recon":
-            result = self.metric(recon_audio.detach(), codec_audio.detach())
+            reference = codec_audio.detach()
+            estimate = recon_audio.detach()
         elif self.version == "audio_recon":
-            result = self.metric(
-                recon_audio.detach(), audio[..., : recon_audio.shape[-1]].detach()
-            )
+            min_length = min(audio.shape[-1], recon_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = recon_audio[..., :min_length].detach()
         elif self.version == "audio_codec":
-            result = self.metric(
-                codec_audio.detach(), audio[..., : codec_audio.shape[-1]].detach()
-            )
+            min_length = min(audio.shape[-1], codec_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = codec_audio[..., :min_length].detach()
         else:
             raise NotImplementedError()
+        result = self.metric(estimate, reference)
         return result.item()
 
 
@@ -83,17 +87,19 @@ class STFTMetric(BaseMetric):
         **kwargs
     ):
         if self.version == "codec_recon":
-            result = self.metric(recon_audio.detach(), codec_audio.detach())
+            reference = codec_audio.detach()
+            estimate = recon_audio.detach()
         elif self.version == "audio_recon":
-            result = self.metric(
-                recon_audio.detach(), audio[..., : recon_audio.shape[-1]].detach()
-            )
+            min_length = min(audio.shape[-1], recon_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = recon_audio[..., :min_length].detach()
         elif self.version == "audio_codec":
-            result = self.metric(
-                codec_audio.detach(), audio[..., : codec_audio.shape[-1]].detach()
-            )
+            min_length = min(audio.shape[-1], codec_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = codec_audio[..., :min_length].detach()
         else:
             raise NotImplementedError()
+        result = self.metric(estimate, reference)
         return result.item()
 
 
@@ -115,11 +121,13 @@ class STOIMetric(BaseMetric):
             reference = codec_audio.detach()
             estimate = recon_audio.detach()
         elif self.version == "audio_recon":
-            reference = audio[..., : recon_audio.shape[-1]].detach()
-            estimate = recon_audio.detach()
+            min_length = min(audio.shape[-1], recon_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = recon_audio[..., :min_length].detach()
         elif self.version == "audio_codec":
-            reference = audio[..., : codec_audio.shape[-1]].detach()
-            estimate = codec_audio.detach()
+            min_length = min(audio.shape[-1], codec_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = codec_audio[..., :min_length].detach()
         else:
             raise NotImplementedError()
         result = self.metric(estimate, reference, fs=self.sampling_rate)
@@ -147,11 +155,13 @@ class PESQMetric(BaseMetric):
             reference = codec_audio.detach()
             estimate = recon_audio.detach()
         elif self.version == "audio_recon":
-            reference = audio[..., : recon_audio.shape[-1]].detach()
-            estimate = recon_audio.detach()
+            min_length = min(audio.shape[-1], recon_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = recon_audio[..., :min_length].detach()
         elif self.version == "audio_codec":
-            reference = audio[..., : codec_audio.shape[-1]].detach()
-            estimate = codec_audio.detach()
+            min_length = min(audio.shape[-1], codec_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = codec_audio[..., :min_length].detach()
         else:
             raise NotImplementedError()
         result = self.metric(estimate, reference, fs=self.sampling_rate, mode=self.mode)
@@ -180,11 +190,13 @@ class VISQOLMetric(BaseMetric):
             reference = codec_audio.detach()
             estimate = recon_audio.detach()
         elif self.version == "audio_recon":
-            reference = audio[..., : recon_audio.shape[-1]].detach()
-            estimate = recon_audio.detach()
+            min_length = min(audio.shape[-1], recon_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = recon_audio[..., :min_length].detach()
         elif self.version == "audio_codec":
-            reference = audio[..., : codec_audio.shape[-1]].detach()
-            estimate = codec_audio.detach()
+            min_length = min(audio.shape[-1], codec_audio.shape[-1])
+            reference = audio[..., :min_length].detach()
+            estimate = codec_audio[..., :min_length].detach()
         else:
             raise NotImplementedError()
 
