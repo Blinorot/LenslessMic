@@ -1,24 +1,13 @@
 train:
-  _target_: torch.utils.data.ConcatDataset
-  datasets:
-    - _target_: src.datasets.LibrispeechDataset
-      max_audio_length: 3
-      limit: 150
-      part: "train-clean-100"
-      roi_kwargs: ${reconstruction.roi_kwargs}
-      codec_name: ${codec.codec_name}
-      lensless_tag: "measurement" # lensless dir name is f"lensless_{lensless_tag}"
-      instance_transforms: ${transforms.instance_transforms.train}
-      sim_psf_config: ${psf}
-    - _target_: src.datasets.LibrispeechDataset
-      max_audio_length: 3
-      limit: 150
-      part: "train-other-500"
-      roi_kwargs: ${reconstruction.roi_kwargs}
-      codec_name: ${codec.codec_name}
-      lensless_tag: "measurement" # lensless dir name is f"lensless_{lensless_tag}"
-      instance_transforms: ${transforms.instance_transforms.train}
-      sim_psf_config: ${psf}
+  _target_: src.datasets.LibrispeechDataset
+  max_audio_length: 3
+  limit: 150
+  part: "train-other-500"
+  roi_kwargs: ${reconstruction.roi_kwargs}
+  codec_name: ${codec.codec_name}
+  lensless_tag: "measurement" # lensless dir name is f"lensless_{lensless_tag}"
+  instance_transforms: ${transforms.instance_transforms.train}
+  sim_psf_config: ${psf}
 test:
   _target_: src.datasets.LibrispeechDataset
   limit: 1
