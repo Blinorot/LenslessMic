@@ -37,7 +37,7 @@ class LibrispeechDataset(BaseDataset):
                 ],
                 [],
             )
-        elif isinstance(part, list):
+        elif not isinstance(part, str):  # then it is list/hydra-list
             index = sum(
                 [self._get_or_load_index(part_i) for part_i in part],
                 [],
