@@ -1,8 +1,7 @@
 train:
   _target_: src.datasets.LibrispeechDataset
   max_audio_length: 3
-  limit: 150
-  part: "train-other-500"
+  part: ["train-other-500", "train-clean-100"]
   roi_kwargs: ${reconstruction.roi_kwargs}
   codec_name: ${codec.codec_name}
   lensless_tag: "measurement" # lensless dir name is f"lensless_{lensless_tag}"

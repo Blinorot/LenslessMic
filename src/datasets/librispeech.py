@@ -39,6 +39,11 @@ class LibrispeechDataset(BaseDataset):
                 ],
                 [],
             )
+        elif isinstance(part, list):
+            index = sum(
+                [self._get_or_load_index(part_i) for part_i in part],
+                [],
+            )
         else:
             index = self._get_or_load_index(part)
 
