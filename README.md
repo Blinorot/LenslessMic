@@ -21,6 +21,9 @@
 <a href="https://huggingface.co/collections/Blinorot/lenslessmic-68caf4f8ff7fa56c2dac8540">
   <img src="https://img.shields.io/badge/HuggingFace-Collection-yellow.svg?logo=huggingface&logoColor=white">
 </a>
+<a href="https://colab.research.google.com/github/Blinorot/LenslessMic/blob/main/notebooks/Demo.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab">
+</a>
 <a href="https://github.com/Blinorot/pytorch_project_template/blob/main/LICENSE">
    <img src=https://img.shields.io/badge/license-MIT-blue.svg>
 </a>
@@ -34,7 +37,7 @@ We represent audio as a time-varying array of images, which is captured by a len
 
 Demo samples are provided on the [project page](https://blinorot.github.io/projects/LenslessMic/) together with additional experiments. Models and datasets are stored in the [HuggingFace Collection](https://huggingface.co/collections/Blinorot/lenslessmic-68caf4f8ff7fa56c2dac8540).
 
-We provide a demo notebook [here](https://github.com/Blinorot/LenslessMic/tree/main/notebooks/Demo.ipynb).
+We provide a demo notebook [here](https://github.com/Blinorot/LenslessMic/blob/main/notebooks/Demo.ipynb). You can also open it in [Colab](https://colab.research.google.com/github/Blinorot/LenslessMic/blob/main/notebooks/Demo.ipynb).
 
 ## Installation
 
@@ -257,7 +260,7 @@ python3 upload_dataset.py --local-dir "PATH_TO_PI_SSD/datasets/librispeech/test-
 
 ## How To Use
 
-We provide an example notebook [here](https://github.com/Blinorot/LenslessMic/tree/main/notebooks/Demo.ipynb).
+We provide an example notebook [here](https://github.com/Blinorot/LenslessMic/blob/main/notebooks/Demo.ipynb).
 
 To train a model, run the following command:
 
