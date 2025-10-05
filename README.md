@@ -2,18 +2,24 @@
 
 <p align="center">
   <a href="#about">About</a> •
-  <a href="#tutorials">Tutorials</a> •
-  <a href="#examples">Examples</a> •
   <a href="#installation">Installation</a> •
+  <a href="#pre-trained-checkpoints">Pre-trained Checkpoints</a> •
+  <a href="#dataset">Dataset</a> •
   <a href="#how-to-use">How To Use</a> •
-  <a href="#useful-links">Useful Links</a> •
+  <a href="#citation">Citation</a> •
   <a href="#credits">Credits</a> •
   <a href="#license">License</a>
 </p>
 
 <p align="center">
-<a href="https://github.com/Blinorot/pytorch_project_template/generate">
-  <img src="https://img.shields.io/badge/use%20this-template-green?logo=github">
+<a href="https://arxiv.org/abs/2509.16418">
+  <img src="https://img.shields.io/badge/arXiv-2509.16418-b31b1b.svg?logo=arxiv&logoColor=white">
+</a>
+<a href="https://blinorot.github.io/projects/LenslessMic/">
+  <img src="https://img.shields.io/badge/🌐%20Project-Page-green?logo=web&logoColor=white">
+</a>
+<a href="https://huggingface.co/collections/Blinorot/lenslessmic-68caf4f8ff7fa56c2dac8540">
+  <img src="https://img.shields.io/badge/HuggingFace-Collection-yellow.svg?logo=huggingface&logoColor=white">
 </a>
 <a href="https://github.com/Blinorot/pytorch_project_template/blob/main/LICENSE">
    <img src=https://img.shields.io/badge/license-MIT-blue.svg>
@@ -22,37 +28,17 @@
 
 ## About
 
-This repository contains a template for [PyTorch](https://pytorch.org/)-based Deep Learning projects.
+This repository contains an official implementation of ["LenslessMic: Audio Encryption and Authentication via Lensless Computational Imaging"](https://arxiv.org/abs/2509.16418).
 
-The template utilizes different python-dev techniques to improve code readability. Configuration methods enhance reproducibility and experiments control.
+We represent audio as a time-varying array of images, which is captured by a lensless camera for encryption. Lensless reconstruction algorithms are used to recover audio signal. The method is applicable on different types of audio (speech/music) and different codecs. A codec-agnostic model trained on random data can also be used. LenslessMic serves as a robust audio encryption tool with a physical layer of security and as an authentication methods.
 
-The repository is released as a part of the [HSE DLA course](https://github.com/markovka17/dla), however, can easily be adopted for any DL-task.
+Demo samples are provided on the [project page](https://blinorot.github.io/projects/LenslessMic/) together with additional experiments. Models and datasets are stored in the [HuggingFace Collection](https://huggingface.co/collections/Blinorot/lenslessmic-68caf4f8ff7fa56c2dac8540).
 
-This template is the official recommended template for the [EPFL CS-433 ML Course](https://www.epfl.ch/labs/mlo/machine-learning-cs-433/).
-
-## Tutorials
-
-This template utilizes experiment tracking techniques, such as [WandB](https://docs.wandb.ai/) and [Comet ML](https://www.comet.com/docs/v2/), and [Hydra](https://hydra.cc/docs/intro/) for the configuration. It also automatically reformats code and conducts several checks via [pre-commit](https://pre-commit.com/). If you are not familiar with these tools, we advise you to look at the tutorials below:
-
-- [Python Dev Tips](https://github.com/ebezzam/python-dev-tips): information about [Git](https://git-scm.com/doc), [pre-commit](https://pre-commit.com/), [Hydra](https://hydra.cc/docs/intro/), and other stuff for better Python code development. The YouTube recording of the workshop is available [here](https://youtu.be/okxaTuBdDuY).
-
-- [Seminar on R&D Coding](https://youtu.be/sEA-Js5ZHxU): Seminar from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/) with template discussion and reasoning. It also explains how to work with [WandB](https://docs.wandb.ai/). The seminar materials can be found [here](https://github.com/LauzHack/deep-learning-bootcamp/blob/main/day03/Seminar_WandB_and_Coding.ipynb).
-
-- [HSE DLA Course Introduction Week](https://github.com/markovka17/dla/tree/2024/week01): combines the two seminars above into one with some updates, including an extra example for [Comet ML](https://www.comet.com/docs/v2/).
-
-- [PyTorch Basics](https://github.com/markovka17/dla/tree/2024/week01/intro_to_pytorch): several notebooks with [PyTorch](https://pytorch.org/docs/stable/index.html) basics and corresponding seminar recordings from the [LauzHack Deep Learning Bootcamp](https://github.com/LauzHack/deep-learning-bootcamp/).
-
-To start working with a template, just click on the `use this template` button.
-
-<a href="https://github.com/Blinorot/pytorch_project_template/generate">
-  <img src="https://img.shields.io/badge/use%20this-template-green?logo=github">
-</a>
-
-You can choose any of the branches as a starting point. [Set your choice as the default branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch) in the repository settings. You can also [delete unnecessary branches](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
+We provide a demo notebook [here](https://github.com/Blinorot/LenslessMic/tree/main/notebooks/Demo.ipynb).
 
 ## Installation
 
-Installation may depend on your task. The general steps are the following:
+Install the environment and dependencies:
 
 0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)). We used `PYTHON_VERSION=3.11.7`.
 
@@ -85,7 +71,7 @@ Installation may depend on your task. The general steps are the following:
    pip install -r requirements.txt
    ```
 
-   Also follow [VISQOL](https://github.com/google/visqol) repo for metric installation.
+   Also follow [VISQOL](https://github.com/google/visqol) repo for the metric installation.
 
 2. Install `pre-commit`:
    ```bash
@@ -124,7 +110,7 @@ UTMOS installation:
    pip install -r requirements.txt
    ```
 
-Raspberry Pi installation:
+Raspberry Pi installation (for the dataset collection):
 
 0. Install requirements:
 
@@ -189,12 +175,25 @@ cd scripts
 python3 download_dac.py --remote-path "16x16_130_16khz/latest/dac/weights.pth"
 ```
 
-The weights will be saved to `data/dac_exps/`
+The weights will be saved to `data/dac_exps/`. Use `download_xcodec.py` instead for the [X-Codec](https://arxiv.org/abs/2408.17175).
 
 > [!NOTE]
 > The configs for [custom DAC](https://huggingface.co/Blinorot/dac_finetuned_librispeech), fine-tuned on [Librispeech](https://www.openslr.org/12) is located [here](https://github.com/Blinorot/descript-audio-codec).
 
-To download pre-trained LenslessMic models use the following command: TBA.
+To download pre-trained LenslessMic models use the following command:
+
+```bash
+cd scripts
+python3 download_models.py --remote-path ""
+```
+
+If you want a specific checkpoint, use its folder name with `/` at the end. For example:
+
+```bash
+python3 download_models.py --remote-path "32x32_librispeech_mse_ssim_raw_ssim_PSF_Unet4M_U5_Unet4M/"
+```
+
+The description of the models is provided in the model card on [HuggingFace](https://huggingface.co/collections/Blinorot/lenslessmic-68caf4f8ff7fa56c2dac8540).
 
 ## Dataset
 
@@ -202,18 +201,31 @@ To download ready-to-use dataset, use the following command:
 
 ```bash
 cd scripts
-python3 download_dataset.py --remote-path "TBA"
+python3 download_dataset.py --repo-id "Blinorot/dataset_name" \
+   --remote-path "" \
+   --local-dir "MANDATORY_LOCAL_DIR"
 ```
+
+Similar to the models' script, you can download only specific subfolders by setting `remote-path`. You must indicate the local directory. We recommend downloading to `data/datasets/dataset_name`. By default, our code assumes that the dataset names are renamed to:
+
+- `librispeech` for `Blinorot/lensless_mic_librispeech`.
+- `songdescriber` for `Blinorot/lensless_mic_songdescriber`.
+- `random` for `Blinorot/lensless_mic_random`.
+
+The descriptions of the datasets are provided in the corresponding dataset cards on [HuggingFace](https://huggingface.co/collections/Blinorot/lenslessmic-68caf4f8ff7fa56c2dac8540).
 
 ### Dataset collection
 
-To collect data, you need to download DAC weights first via commands written in [Pre-trained checkpoints](#pre-trained-checkpoints) section.
+To collect data, you need to download DAC/X-Codec weights first via commands written in [Pre-trained checkpoints](#pre-trained-checkpoints) section.
 
 Then, you need to run the following script to save your audio in video format:
 
 ```bash
 python3 -m src.scripts.processing.convert_dataset dataset.part="test-clean" codec.codec_name="16x16_130_16khz"
 ```
+
+> [!NOTE]
+> Choose another `part` and `codec_name` if you use another codec/partition. Also modify paths below with the corresponding names.
 
 Then, upload it to HF:
 
@@ -245,13 +257,27 @@ python3 upload_dataset.py --local-dir "PATH_TO_PI_SSD/datasets/librispeech/test-
 
 ## How To Use
 
+We provide an example notebook [here](https://github.com/Blinorot/LenslessMic/tree/main/notebooks/Demo.ipynb).
+
 To train a model, run the following command:
 
 ```bash
 python3 train.py -cn=CONFIG_NAME HYDRA_CONFIG_ARGUMENTS
 ```
 
-Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` are optional arguments.
+Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` are optional arguments. For example, this code will train `Learned` method from the paper using the default config with CLI modifications:
+
+```bash
+python3 train.py trainer.override=True dataloader.train.batch_size=1 \
+   dataloader.inference.batch_size=1 \
+   writer.run_name=32x32_librispeech_mse_ssim_raw_ssim_PSF_Unet4M_U5_Unet4M \
+   codec.codec_name=32x32_120_16khz_original \
+   reconstruction=32x32 optimizer.lr=1e-4 \
+   loss_function.audio_l1_coef=0 loss_function.raw_codec_ssim_coef=1 \
+   loss_function.raw_codec_l1_coef=0 transforms=padcrop_train \
+   +loss_function.ssim_kernel=7 +loss_function.ssim_sigma=0.5 \
+   +loss_function.raw_ssim_kernel=11
+```
 
 To run inference (evaluate the model or save predictions):
 
@@ -259,21 +285,46 @@ To run inference (evaluate the model or save predictions):
 python3 inference.py HYDRA_CONFIG_ARGUMENTS
 ```
 
-## Useful Links:
+For example, to run inference for the `Learned` model, run:
 
-You may find the following links useful:
+```bash
+python3 inference.py codec.codec_name=32x32_120_16khz_original \
+   reconstruction=32x32 \
+   inferencer.model_tag=32x32_librispeech_mse_ssim_raw_ssim_PSF_Unet4M_U5_Unet4M
+```
 
-- [Report branch](https://github.com/Blinorot/pytorch_project_template/tree/report): Guidelines for writing a scientific report/paper (with an emphasis on DL projects).
+> [!NOTE] > `inference.py` assumes that you moved your model checkpoint to `data/lensless_exps` dir.
 
-- [CLAIRE Template](https://github.com/CLAIRE-Labo/python-ml-research-template): additional template by [EPFL CLAIRE Laboratory](https://www.epfl.ch/labs/claire/) that can be combined with ours to enhance experiments reproducibility via [Docker](https://www.docker.com/).
+By default, the code saves reconstructed audio and video to `data/datasets/reconstructed/{dataset_tag}/{partition}/{model_tag}`.
 
-- [Mamba](https://github.com/mamba-org/mamba) and [Poetry](https://python-poetry.org/): alternatives to [Conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) and [pip](https://pip.pypa.io/en/stable/installation/) package managers given above.
+To calculate metrics, use the `calculate_metrics.py` script. It has the same signature. However, you need to run NeMo first to get ASR transcriptions and speaker embeddings. To do so, use:
 
-- [Awesome README](https://github.com/matiassingers/awesome-readme): a list of awesome README files for inspiration. Check the basics [here](https://github.com/PurpleBooth/a-good-readme-template).
+```bash
+cd scripts
+python3 run_asr.py --audio-dir PATH_TO_AUDIO_FILES
+python3 run_speaker.py --audio-dir PATH_TO_AUDIO_FILES
+```
+
+You can add `--recursive` to apply ASR on all audio files in all subfolders. For UTMOS metric, follow the [UTMOS repository](https://github.com/sarulab-speech/UTMOS22).
+
+We also provide a GAN-based version of the scripts (`train_gan.py`), in which a discriminator-based loss is added to enhance the reconstruction. However, we did not see any improvements using this approach.
+
+## Citation
+
+If you use this repo, please cite it as follows:
+
+```bibtex
+@article{grinberg2025lenslessmic,
+  title = {LenslessMic: Audio Encryption and Authentication via Lensless Computational Imaging},
+  author = {Grinberg, Petr and Bezzam, Eric and Prandoni, Paolo and Vetterli, Martin},
+  journal = {arXiv preprint arXiv:2509.16418},
+  year = {2025},
+}
+```
 
 ## Credits
 
-This repository is based on a heavily modified fork of [pytorch-template](https://github.com/victoresque/pytorch-template) and [asr_project_template](https://github.com/WrathOfGrapes/asr_project_template) repositories.
+This repository is based on [PyTorch Project Template](https://github.com/Blinorot/pytorch_project_template). It uses some code from [LenslessPiCam](https://github.com/LCAV/LenslessPiCam) project. We also use [DAC](https://github.com/descriptinc/descript-audio-codec/) and [X-Codec](https://github.com/zhenye234/xcodec) code for neural audio codecs and some of the losses.
 
 ## License
 

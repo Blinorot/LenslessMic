@@ -14,6 +14,6 @@ inferencer:
   save_path: null # if null, defaults to ROOT_PATH / data / datasets / reconstructed
   metrics_path: null # if null, defaults to ROOT_PATH / data / metrics / reconstructed
   dataset_tag: "librispeech" # dataset name
-  model_tag: "32x32_librispeech_mse_ssim_raw_ssim_PSF_Unet4M_U5_Unet4M" # save_path  / dataset_tag / partition / save_tag
+  model_tag: "32x32_librispeech_mse_ssim_raw_ssim_PSF_Unet4M_U5_Unet4M" # save_path  / dataset_tag / partition / model_tag
   seed: 1
   skip_model_load: True
